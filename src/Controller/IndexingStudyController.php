@@ -34,7 +34,7 @@ class IndexingStudyController extends ControllerBase {
       ->condition('type', 'response')
       ->accessCheck(TRUE)
       ->execute();
-    $completed_assignments = [];
+    $completed_assignments = [0];
     foreach ($completed_responses as $completed_response) {
       $response_entity = \Drupal::entityTypeManager()->getStorage('storage')->load($completed_response);
       $related_assignment = $response_entity->get('field_assignment')->getValue()[0]['target_id'];
@@ -57,7 +57,7 @@ class IndexingStudyController extends ControllerBase {
     $results = $assignment_query->execute();
 
     if(count($results) < 1) {
-      return ['#markup' => $this->t('You have no outstanding responses to do for this pool.')];
+      return ['#markup' => $this->t('You have no outstanding assignments to do for this pool. 🥳')];
     }
     else {
       $assignment_id = array_pop($results);

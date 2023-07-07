@@ -12,6 +12,8 @@ class IndexingStudyUtils {
   const MEMBER_OF_POOL_FIELD = 'field_pool';
   // Store the machine name of the 'assignment' bundle.
   const ASSIGNMENT_BUNDLE = 'assignment';
+  // Store teh machine name of the 'pool' bundle.
+  const POOL_BUNDLE = 'pool';
   // Store the field on assignment that points to the pool.
   const ASSIGNMENT_POOL_FIELD = 'field_pool';
   // Store the field on assignment that points to user.
@@ -38,6 +40,20 @@ class IndexingStudyUtils {
   ) {
     $this->entityTypeManager = $entityTypeManager;
   }
+
+  /**
+   * Get a list of all pools.
+   *
+   * @return array
+   */
+  public function getPools() {
+    return $this->entityTypeManager->getStorage('storage')
+      ->getQuery()
+      ->condition('type', self::POOL_BUNDLE)
+      ->accessCheck(TRUE)
+      ->execute();
+  }
+
   /**
    * @param \Drupal\storage\Entity\StorageInterface $pool
    * @return array

@@ -28,7 +28,7 @@ class ResponsesBlock extends BlockBase {
       'pool_id' => 'Pool ID',
       'progress' => 'Progress',
     ];
-    $pools = [2,10];
+    $pools = $utils->getPools();
     $rows = [];
     $link_generator = \Drupal::service('link_generator');
     foreach ($pools as $pool_id) {
