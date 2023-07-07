@@ -8,7 +8,8 @@ dependencies:
   - bibcite:bibcite_import
   - bibcite:bibcite_ris
   - field_group:field_group
+  - prepopulate:preopoulate
   - simple_multistep:simple_multistep
+  - storage:storage
   - views_bulk_edit:views_bulk_edit
   - views_bulk_operations:views_bulk_operations
-  - storage:storage
