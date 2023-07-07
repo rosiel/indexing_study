@@ -1,0 +1,8 @@
+services:
+  indexing_study.admin_views_route_subscriber:
+    class: Drupal\indexing_study\EventSubscriber\AdminViewsRouteSubscriber
+    tags:
+      - { name: event_subscriber }
+  indexing_study.utils:
+    class: Drupal\indexing_study\IndexingStudyUtils
+    arguments: ['@entity_type.manager']

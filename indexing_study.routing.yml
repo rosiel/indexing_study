@@ -1,0 +1,27 @@
+indexing_study.manage:
+  path: '/study/manage'
+  defaults:
+    _controller: '\Drupal\indexing_study\Controller\IndexingStudyController::manage'
+    _title: 'Manage Pools and Assignments'
+  requirements:
+    _permission: 'administer content'
+indexing_study.assign:
+  path: '/study/{storage}/assign'
+  defaults:
+    _form: '\Drupal\indexing_study\Form\IndexingStudyAssignmentForm'
+    _title: 'Assign this Pool'
+    entity_type_id: storage
+  requirements:
+    _permission: 'administer content'
+indexing_study.respond:
+  path: '/study/{storage}/respond'
+  defaults:
+    _controller: '\Drupal\indexing_study\Controller\IndexingStudyController::respond'
+    _title: 'Adding your responses'
+  requirements:
+    _permission: 'add response storage entities'
+  options:
+    parameters:
+      storage:
+        type: entity:storage
+    no-cache: 'TRUE'

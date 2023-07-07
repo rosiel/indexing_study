@@ -1,0 +1,83 @@
+<?php
+
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\simple_multistep\MultistepController;
+/**
+ * Implements hook_form_FORM_id_alter().
+ */
+function indexing_study_form_storage_response_add_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  /** @var \Drupal\simple_multistep\MultistepController $multiStep */
+// I want to load the entity that is pre-populated in field_assignment.
+  $params = \Drupal::request()->query->all();
+  if (isset($params['edit'])) {
+    $assignment_id = $params['edit']['field_assignment']['widget'][0]['target_id'];
+    $assignment = \Drupal::entityTypeManager()->getStorage('storage')->load($assignment_id);
+    if ($assignment) {
+      $item_id = $assignment->get('field_citation')->getValue()[0]['target_id'];
+      $item = \Drupal::entityTypeManager()->getStorage('bibcite_reference')->load($item_id);
+      if($item) {
+        $study_info = ['assignment' => $assignment, 'item' => $item];
+
+        // Populate the upper section to display the Reference (sans keywords).
+        $view_builder = \Drupal::entityTypeManager()->getViewBuilder('bibcite_reference');
+        $form['field_item_title'] = [
+          '#type' => 'markup',
+          '#markup' => '<div><h1>' . $item->get('title')->value . '</h1></div>',
+          '#weight' => 0
+        ];
+        $rendered_citation = $view_builder->view($item, 'indexing_study');
+        $form['field_item_rest'] = $rendered_citation;
+
+        // If Step 2, add the step 2 information
+        $multiStep = $form_state->get('multistep_controller');
+        if ($multiStep) {
+          if ($multiStep->getCurrentStep()) { // if not the 0th step
+
+            // Display the keywords stored in the entity
+            $form['existing_keywords'] = $view_builder->view($item, 'keywords');
+            // Display the librarian's keywords
+            $keywords = array();
+            foreach ($form_state->getUserInput()['field_terms_from_librarian'] as $keyword) {
+              $keywords[$keyword['value']] = $keyword['value'];
+            };
+
+            $form['librarian_keywords_missing'] = [
+              '#type' => 'checkboxes',
+              '#title' => 'Are any of your entered terms missing?',
+              '#options' =>  $keywords,
+             ];
+          }
+        }
+      }
+    }
+  }
+  // Add custom submit handler.
+  foreach (array_keys($form['actions']) as $action) {
+
+    if ($action != 'preview' && isset($form['actions'][$action]['#type'])
+    && $form['actions'][$action]['#type'] === 'submit') {
+      array_unshift($form['actions']['submit']['#submit'], 'indexing_study_response_form_submit');
+      $form['actions'][$action]['#submit'][] = 'indexing_study_response_form_submit_redirect';
+
+    }
+  }
+}
+
+function indexing_study_response_form_submit(array &$form, FormStateInterface $form_state) {
+  $librarian_terms = $form_state->getValue('librarian_keywords_missing');
+  $missing_term_values = [];
+  foreach ($librarian_terms as $value) {
+    if ($value != 0) {
+      $missing_term_values[] = ['value' => $value];
+    }
+  }
+  $form_state->setValue('field_terms_missing_from_officia', $missing_term_values);
+}
+function indexing_study_response_form_submit_redirect(array &$form, FormStateInterface $form_state) {
+  // Get the pool from the assignment.
+  $assignment_id = $form_state->getValue('field_assignment')[0]['target_id'];
+  $assignment = \Drupal::entityTypeManager()->getStorage('storage')->load($assignment_id);
+  $pool = $assignment->get('field_pool')->getValue()[0]['target_id'];
+  // Redirect to next response
+  $form_state->setRedirect('indexing_study.respond', ['storage' => $pool]);
+}

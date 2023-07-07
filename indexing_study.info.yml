@@ -1,0 +1,8 @@
+name: Indexing Study
+type: module
+description: "Tools for assessing quality of indexing by humans and robots."
+package: custom
+core_version_requirement: ^9
+dependencies:
+  - bibcite:bibcite_entity
+  - storage:storage
