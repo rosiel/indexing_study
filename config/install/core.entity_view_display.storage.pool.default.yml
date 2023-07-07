@@ -1,0 +1,31 @@
+uuid: 4ef2ad1e-8d69-44db-bb2f-c5b13f09ec6e
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.field.storage.pool.field_pool_description
+    - storage.storage_type.pool
+  module:
+    - text
+id: storage.pool.default
+targetEntityType: storage
+bundle: pool
+mode: default
+content:
+  field_pool_description:
+    type: text_default
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    weight: -3
+    region: content
+  name:
+    type: string
+    label: hidden
+    settings:
+      link_to_entity: false
+    third_party_settings: {  }
+    weight: -5
+    region: content
+hidden:
+  user_id: true

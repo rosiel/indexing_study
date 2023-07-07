@@ -1,0 +1,25 @@
+uuid: e129b84f-0d0d-40f2-a832-1c1387109f41
+langcode: en
+status: true
+dependencies:
+  module:
+    - indexing_study
+    - system
+  theme:
+    - olivero
+id: indexingstudyresponses
+theme: olivero
+region: content
+weight: 0
+provider: null
+plugin: indexing_study_responses
+settings:
+  id: indexing_study_responses
+  label: 'Indexing Study Responses'
+  label_display: visible
+  provider: indexing_study
+visibility:
+  request_path:
+    id: request_path
+    negate: false
+    pages: '/user/*'

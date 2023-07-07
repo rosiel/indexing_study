@@ -1,0 +1,15 @@
+uuid: ee1a0688-0c81-4e43-b748-4d17d845214e
+langcode: en
+status: true
+dependencies:
+  module:
+    - bibcite_entity
+  enforced:
+    module:
+      - bibcite_entity
+_core:
+  default_config_hash: CPCpnlGWsitm9GY7PprWicXgG44mga6NkcmB2BjzTAQ
+id: bibcite_reference.citation
+label: Citation
+targetEntityType: bibcite_reference
+cache: true

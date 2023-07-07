@@ -1,0 +1,10 @@
+uuid: 5d9a6da1-bcc1-4907-8754-c4540a5f6309
+langcode: en
+status: true
+dependencies:
+  module:
+    - bibcite_entity
+id: bibcite_reference.keywords
+label: keywords
+targetEntityType: bibcite_reference
+cache: true

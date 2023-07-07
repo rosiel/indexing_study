@@ -1,0 +1,19 @@
+uuid: 484a3e8b-4d20-408c-8ff1-05e2c36130ae
+langcode: en
+status: true
+dependencies:
+  module:
+    - storage
+id: storage.field_assignment
+field_name: field_assignment
+entity_type: storage
+type: entity_reference
+settings:
+  target_type: storage
+module: core
+locked: false
+cardinality: 1
+translatable: true
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false

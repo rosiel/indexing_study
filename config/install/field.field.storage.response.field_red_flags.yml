@@ -1,0 +1,23 @@
+uuid: 696688d9-47b5-43f1-8ddb-9e18f3ebcf6f
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.storage.field_red_flags
+    - storage.storage_type.response
+id: storage.response.field_red_flags
+field_name: field_red_flags
+entity_type: storage
+bundle: response
+label: 'Red Flags'
+description: 'Are there "red flags" in the automated indexing, for example, the misinterpretation of the phrase "Red flags" as the MeSH topic "Signs and insignia"? If so, leave in comments.'
+required: false
+translatable: false
+default_value:
+  -
+    value: 0
+default_value_callback: ''
+settings:
+  on_label: 'On'
+  off_label: 'Off'
+field_type: boolean

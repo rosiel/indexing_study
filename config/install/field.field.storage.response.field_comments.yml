@@ -1,0 +1,19 @@
+uuid: 251222c5-c9ed-4e5e-8da1-8c7325772860
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.storage.field_comments
+    - storage.storage_type.response
+id: storage.response.field_comments
+field_name: field_comments
+entity_type: storage
+bundle: response
+label: Comments
+description: 'If necessary, add comments.'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string_long

@@ -1,0 +1,13 @@
+uuid: f8cb5484-62fc-4125-8515-3d1856868537
+langcode: en
+status: true
+dependencies: {  }
+id: response
+label: Response
+description: 'A response by a librarian to an assignment'
+help: ''
+new_revision: true
+revision_expose: false
+revision_log: false
+name_pattern: '[current-user:account-name]--response-to-assignment-[storage:field_assignment:target_id]--[random:number]'
+has_canonical: true

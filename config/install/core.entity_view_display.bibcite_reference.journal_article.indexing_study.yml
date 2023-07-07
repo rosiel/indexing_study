@@ -1,0 +1,104 @@
+uuid: 6465f646-7a84-4b04-9a8c-c0030f03fef1
+langcode: en
+status: true
+dependencies:
+  config:
+    - bibcite_entity.bibcite_reference_type.journal_article
+    - core.entity_view_mode.bibcite_reference.indexing_study
+    - field.field.bibcite_reference.journal_article.field_pool
+  module:
+    - text
+  enforced:
+    config:
+      - bibcite_entity.bibcite_reference_type.journal_article
+    module:
+      - bibcite_entity
+_core:
+  default_config_hash: o_QSf_lfF0hdIjXwKdnEi9wrEExSEFD3371T0sQ3zvQ
+id: bibcite_reference.journal_article.indexing_study
+targetEntityType: bibcite_reference
+bundle: journal_article
+mode: indexing_study
+content:
+  bibcite_abst_e:
+    type: text_default
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    weight: 2
+    region: content
+  bibcite_label:
+    type: string
+    label: above
+    settings:
+      link_to_entity: false
+    third_party_settings: {  }
+    weight: 1
+    region: content
+  bibcite_pmid:
+    type: string
+    label: above
+    settings:
+      link_to_entity: false
+    third_party_settings: {  }
+    weight: 0
+    region: content
+  bibcite_secondary_title:
+    type: string
+    label: above
+    settings:
+      link_to_entity: false
+    third_party_settings: {  }
+    weight: 3
+    region: content
+hidden:
+  author: true
+  bibcite_abst_f: true
+  bibcite_access_date: true
+  bibcite_accession_number: true
+  bibcite_alternate_title: true
+  bibcite_auth_address: true
+  bibcite_call_number: true
+  bibcite_citekey: true
+  bibcite_custom1: true
+  bibcite_custom2: true
+  bibcite_custom3: true
+  bibcite_custom4: true
+  bibcite_custom5: true
+  bibcite_custom6: true
+  bibcite_custom7: true
+  bibcite_date: true
+  bibcite_doi: true
+  bibcite_edition: true
+  bibcite_isbn: true
+  bibcite_issn: true
+  bibcite_issue: true
+  bibcite_lang: true
+  bibcite_links: true
+  bibcite_notes: true
+  bibcite_number: true
+  bibcite_number_of_volumes: true
+  bibcite_original_publication: true
+  bibcite_other_author_affiliations: true
+  bibcite_other_number: true
+  bibcite_pages: true
+  bibcite_place_published: true
+  bibcite_publisher: true
+  bibcite_refereed: true
+  bibcite_remote_db_name: true
+  bibcite_remote_db_provider: true
+  bibcite_reprint_edition: true
+  bibcite_research_notes: true
+  bibcite_section: true
+  bibcite_short_title: true
+  bibcite_tertiary_title: true
+  bibcite_translated_title: true
+  bibcite_type: true
+  bibcite_type_of_work: true
+  bibcite_url: true
+  bibcite_volume: true
+  bibcite_year: true
+  citation: true
+  field_pool: true
+  keywords: true
+  uid: true

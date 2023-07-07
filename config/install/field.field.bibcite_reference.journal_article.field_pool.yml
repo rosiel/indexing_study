@@ -1,0 +1,29 @@
+uuid: a375bbf8-7dce-420f-96bc-a81ee60ff895
+langcode: en
+status: true
+dependencies:
+  config:
+    - bibcite_entity.bibcite_reference_type.journal_article
+    - field.storage.bibcite_reference.field_pool
+    - storage.storage_type.pool
+id: bibcite_reference.journal_article.field_pool
+field_name: field_pool
+entity_type: bibcite_reference
+bundle: journal_article
+label: Pool
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:storage'
+  handler_settings:
+    target_bundles:
+      pool: pool
+    sort:
+      field: _none
+      direction: ASC
+    auto_create: false
+    auto_create_bundle: ''
+field_type: entity_reference

@@ -48,6 +48,7 @@ class IndexingStudyUtils {
       return [];
     }
     $reference_ids = $this->entityTypeManager->getStorage('bibcite_reference')->getQuery()
+      ->accessCheck(TRUE)
       ->condition(self::MEMBER_OF_POOL_FIELD, $pool->id())
       ->execute();
     if (empty($reference_ids)) {
@@ -61,6 +62,7 @@ class IndexingStudyUtils {
       return [];
     }
     $assignment_ids = $this->entityTypeManager->getStorage('storage')->getQuery()
+      ->accessCheck(TRUE)
       ->condition(self::MEMBER_OF_POOL_FIELD, $reference->id())
       ->execute();
     if (empty($assignment_ids)) {
@@ -74,6 +76,7 @@ class IndexingStudyUtils {
       return [];
     }
     $assignment_ids = $this->entityTypeManager->getStorage('storage')->getQuery()
+      ->accessCheck(TRUE)
       ->condition(self::MEMBER_OF_POOL_FIELD, $reference->id())
       ->execute();
     if (empty($assignment_ids)) {
@@ -90,6 +93,7 @@ class IndexingStudyUtils {
 
   public function getAssignmentsInPool(StorageInterface $pool, UserInterface $user) {
     $assignment_ids = $this->entityTypeManager->getStorage('storage')->getQuery()
+      ->accessCheck(TRUE)
       ->condition(self::ASSIGNMENT_POOL_FIELD, $pool->id())
       ->condition(self::ASSIGNMENT_USER_FIELD, $user->id())
       ->execute();
@@ -104,6 +108,7 @@ class IndexingStudyUtils {
 
   public function getAssignmentsToDoInPool(StorageInterface $pool, UserInterface $user) {
     $assignment_ids = $this->entityTypeManager->getStorage('storage')->getQuery()
+      ->accessCheck(TRUE)
       ->condition(self::ASSIGNMENT_POOL_FIELD, $pool->id())
       ->condition(self::ASSIGNMENT_USER_FIELD, $user->id())
       ->execute();
@@ -113,6 +118,7 @@ class IndexingStudyUtils {
     }
     // Get all responses that point to those assignments
     $response_ids = $this->entityTypeManager->getStorage('storage')->getQuery()
+      ->accessCheck(TRUE)
       ->condition(self::RESPONSE_ASSIGNMENT_FIELD, $assignment_ids, 'IN')
       ->execute();
     // Get the "completed" assignment IDs

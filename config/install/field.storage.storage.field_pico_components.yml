@@ -1,0 +1,33 @@
+uuid: 6e08ba93-8a51-499c-a8f3-119a21d3fe0b
+langcode: en
+status: true
+dependencies:
+  module:
+    - options
+    - storage
+id: storage.field_pico_components
+field_name: field_pico_components
+entity_type: storage
+type: list_string
+settings:
+  allowed_values:
+    -
+      value: P
+      label: 'Population / Patient / Problem'
+    -
+      value: I
+      label: Intervention
+    -
+      value: C
+      label: Comparison
+    -
+      value: O
+      label: Outcome
+  allowed_values_function: ''
+module: options
+locked: false
+cardinality: -1
+translatable: true
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false

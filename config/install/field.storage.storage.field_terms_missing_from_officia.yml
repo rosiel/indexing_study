@@ -1,0 +1,21 @@
+uuid: a19c5f1d-100f-4df8-86c1-79fea803e609
+langcode: en
+status: true
+dependencies:
+  module:
+    - storage
+id: storage.field_terms_missing_from_officia
+field_name: field_terms_missing_from_officia
+entity_type: storage
+type: string
+settings:
+  max_length: 255
+  case_sensitive: false
+  is_ascii: false
+module: core
+locked: false
+cardinality: -1
+translatable: true
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false

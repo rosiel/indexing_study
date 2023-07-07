@@ -1,0 +1,20 @@
+uuid: 13df7cd9-6898-4e85-8822-c0af54172c66
+langcode: en
+status: true
+dependencies:
+  module:
+    - bibcite_entity
+    - storage
+id: storage.field_citation
+field_name: field_citation
+entity_type: storage
+type: entity_reference
+settings:
+  target_type: bibcite_reference
+module: core
+locked: false
+cardinality: 1
+translatable: true
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false

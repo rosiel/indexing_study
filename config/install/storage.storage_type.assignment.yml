@@ -1,0 +1,13 @@
+uuid: 15133578-b72a-450b-98f2-4bfbfb0f73f8
+langcode: en
+status: true
+dependencies: {  }
+id: assignment
+label: Assignment
+description: 'An assignment of a citation item, within a pool, to a person.'
+help: ''
+new_revision: true
+revision_expose: false
+revision_log: false
+name_pattern: ''
+has_canonical: false

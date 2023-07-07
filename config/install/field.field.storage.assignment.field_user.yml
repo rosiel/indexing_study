@@ -1,0 +1,29 @@
+uuid: 22910f27-6632-41cb-ac1f-1ca4ddb4bf21
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.storage.field_user
+    - storage.storage_type.assignment
+id: storage.assignment.field_user
+field_name: field_user
+entity_type: storage
+bundle: assignment
+label: User
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:user'
+  handler_settings:
+    target_bundles: null
+    sort:
+      field: _none
+      direction: ASC
+    auto_create: false
+    filter:
+      type: _none
+    include_anonymous: false
+field_type: entity_reference

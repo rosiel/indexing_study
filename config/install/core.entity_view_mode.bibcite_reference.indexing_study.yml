@@ -1,0 +1,10 @@
+uuid: d8a62243-0bc8-4e40-9d4d-8bcddaf6d97e
+langcode: en
+status: true
+dependencies:
+  module:
+    - bibcite_entity
+id: bibcite_reference.indexing_study
+label: 'Indexing Study'
+targetEntityType: bibcite_reference
+cache: true

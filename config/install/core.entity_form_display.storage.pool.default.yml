@@ -1,0 +1,33 @@
+uuid: d1d56697-85a7-44d2-a365-1a4879d0d1d7
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.field.storage.pool.field_pool_description
+    - storage.storage_type.pool
+  module:
+    - text
+id: storage.pool.default
+targetEntityType: storage
+bundle: pool
+mode: default
+content:
+  field_pool_description:
+    type: text_textarea
+    weight: 27
+    region: content
+    settings:
+      rows: 5
+      placeholder: ''
+    third_party_settings: {  }
+  name:
+    type: string_textfield
+    weight: -5
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+hidden:
+  status: true
+  user_id: true

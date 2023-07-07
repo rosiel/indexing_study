@@ -1,0 +1,19 @@
+uuid: d72948f2-b2ca-4e9d-9deb-8cb65d1c6d3a
+langcode: en
+status: true
+dependencies:
+  module:
+    - storage
+id: storage.field_pool
+field_name: field_pool
+entity_type: storage
+type: entity_reference
+settings:
+  target_type: storage
+module: core
+locked: false
+cardinality: 1
+translatable: true
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false

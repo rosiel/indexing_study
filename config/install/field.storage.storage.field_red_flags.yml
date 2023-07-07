@@ -1,0 +1,18 @@
+uuid: bbf93a01-2449-4d9a-b37e-20bcf16f12ad
+langcode: en
+status: true
+dependencies:
+  module:
+    - storage
+id: storage.field_red_flags
+field_name: field_red_flags
+entity_type: storage
+type: boolean
+settings: {  }
+module: core
+locked: false
+cardinality: 1
+translatable: true
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false

@@ -1,0 +1,29 @@
+uuid: 2473760b-4209-478c-890e-d5ee12e02c1f
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.storage.field_pool
+    - storage.storage_type.assignment
+    - storage.storage_type.pool
+id: storage.assignment.field_pool
+field_name: field_pool
+entity_type: storage
+bundle: assignment
+label: Pool
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:storage'
+  handler_settings:
+    target_bundles:
+      pool: pool
+    sort:
+      field: _none
+      direction: ASC
+    auto_create: false
+    auto_create_bundle: ''
+field_type: entity_reference

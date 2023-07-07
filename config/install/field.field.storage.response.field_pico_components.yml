@@ -1,0 +1,21 @@
+uuid: 9dc4aa4e-b5ad-41d5-9424-38deff6ba45a
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.storage.field_pico_components
+    - storage.storage_type.response
+  module:
+    - options
+id: storage.response.field_pico_components
+field_name: field_pico_components
+entity_type: storage
+bundle: response
+label: 'PICO components'
+description: 'If terms were missing, select which elements of PICO they fell under (optional)'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: list_string

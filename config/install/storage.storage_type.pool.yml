@@ -1,0 +1,13 @@
+uuid: fa529f27-d81f-424f-b1cc-c9a3d34f17ae
+langcode: en
+status: true
+dependencies: {  }
+id: pool
+label: Pool
+description: 'A collection of Citations that are going to be assigned to users.'
+help: ''
+new_revision: true
+revision_expose: false
+revision_log: false
+name_pattern: ''
+has_canonical: false

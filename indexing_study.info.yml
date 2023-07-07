@@ -2,7 +2,13 @@ name: Indexing Study
 type: module
 description: "Tools for assessing quality of indexing by humans and robots."
 package: custom
-core_version_requirement: ^9
+core_version_requirement: ^9 || ^10
 dependencies:
   - bibcite:bibcite_entity
+  - bibcite:bibcite_import
+  - bibcite:bibcite_ris
+  - field_group:field_group
+  - simple_multistep:simple_multistep
+  - views_bulk_edit:views_bulk_edit
+  - views_bulk_operations:views_bulk_operations
   - storage:storage

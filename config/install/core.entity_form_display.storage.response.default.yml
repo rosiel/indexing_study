@@ -1,0 +1,154 @@
+uuid: 01eeefc3-9fc1-4d91-833b-881e25bdc1ff
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.field.storage.response.field_assignment
+    - field.field.storage.response.field_comments
+    - field.field.storage.response.field_pico_components
+    - field.field.storage.response.field_red_flags
+    - field.field.storage.response.field_terms_from_librarian
+    - field.field.storage.response.field_terms_missing_from_officia
+    - storage.storage_type.response
+  module:
+    - field_group
+third_party_settings:
+  field_group:
+    group_term_identification:
+      children:
+        - group_hidden
+        - field_terms_from_librarian
+      label: 'Term Identification'
+      region: content
+      parent_name: ''
+      weight: 1
+      format_type: form_step
+      format_settings:
+        classes: ''
+        show_empty_fields: false
+        id: ''
+        show_step_title: true
+        step_description: ''
+        back_button_show: false
+        back_button_text: Back
+        next_button_text: Next
+        required_fields: true
+        step_help: ''
+    group_term_comparison:
+      children:
+        - group_hidden_step_2
+        - field_red_flags
+        - field_comments
+        - field_pico_components
+      label: 'Term Comparison'
+      region: content
+      parent_name: ''
+      weight: 2
+      format_type: form_step
+      format_settings:
+        classes: ''
+        show_empty_fields: false
+        id: ''
+        show_step_title: true
+        step_description: ''
+        back_button_show: false
+        back_button_text: Back
+        next_button_text: Next
+        required_fields: true
+        step_help: ''
+    group_hidden:
+      children:
+        - field_assignment
+      label: Hidden
+      region: content
+      parent_name: group_term_identification
+      weight: 0
+      format_type: html_element
+      format_settings:
+        classes: hidden
+        show_empty_fields: true
+        id: ''
+        element: div
+        show_label: false
+        label_element: h3
+        label_element_classes: ''
+        attributes: ''
+        effect: none
+        speed: fast
+        required_fields: false
+    group_hidden_step_2:
+      children:
+        - field_terms_missing_from_officia
+      label: 'hidden step 2'
+      region: content
+      parent_name: group_term_comparison
+      weight: 20
+      format_type: html_element
+      format_settings:
+        classes: hidden
+        show_empty_fields: false
+        id: ''
+        element: div
+        show_label: false
+        label_element: h3
+        label_element_classes: ''
+        attributes: ''
+        effect: none
+        speed: fast
+        required_fields: true
+id: storage.response.default
+targetEntityType: storage
+bundle: response
+mode: default
+content:
+  field_assignment:
+    type: entity_reference_autocomplete
+    weight: 3
+    region: content
+    settings:
+      match_operator: CONTAINS
+      match_limit: 10
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  field_comments:
+    type: string_textarea
+    weight: 23
+    region: content
+    settings:
+      rows: 5
+      placeholder: ''
+    third_party_settings: {  }
+  field_pico_components:
+    type: options_buttons
+    weight: 24
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  field_red_flags:
+    type: boolean_checkbox
+    weight: 22
+    region: content
+    settings:
+      display_label: true
+    third_party_settings: {  }
+  field_terms_from_librarian:
+    type: string_textfield
+    weight: 4
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  field_terms_missing_from_officia:
+    type: string_textfield
+    weight: 21
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+hidden:
+  name: true
+  status: true
+  user_id: true
