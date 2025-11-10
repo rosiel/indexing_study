@@ -2,7 +2,6 @@
 namespace Drupal\indexing_study\Plugin\views\filter;
 
 use Drupal\indexing_study\Plugin\views\filter\AbstractRelatedNodeCountFilter;
-use Drupal\Core\Database\Query\Condition;
 use Drupal\indexing_study\IndexingStudyUtils;
 
 /**
@@ -11,22 +10,20 @@ use Drupal\indexing_study\IndexingStudyUtils;
  * @ViewsFilter("assignment_count_filter")
  */
 class AssignmentCountFilter extends AbstractRelatedNodeCountFilter {
-  
-  public function defaultExposeOptions() {
-    parent::defaultExposeOptions();
-  }
-  /**
-   * {@inheritdoc}
-   */
-  public function defineOptions() {
-    return parent::defineOptions();
-  }
-  /**
-   * {@inheritdoc}
-   */
-  public function query() {
-    $this->buildQuery(IndexingStudyUtils::ASSIGNMENT_BUNDLE);
-  }
 
+  /**
+   * @inheritdoc
+   */
+  protected $node_type = IndexingStudyUtils::ASSIGNMENT_BUNDLE;
+
+  /**
+   * @inheritdoc
+   */
+  protected $relating_field = IndexingStudyUtils::ASSIGNMENT_DOCUMENT_FIELD;
+
+  /**
+   * @inheritdoc
+   */
+  protected $root_node_type = IndexingStudyUtils::DOCUMENT_BUNDLE;
 
 }

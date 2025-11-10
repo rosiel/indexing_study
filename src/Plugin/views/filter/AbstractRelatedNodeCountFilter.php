@@ -2,38 +2,55 @@
 namespace Drupal\indexing_study\Plugin\views\filter;
 
 use Drupal\views\Plugin\views\filter\NumericFilter;
-use Drupal\indexing_study\IndexingStudyUtils;
 
 /**
  * Abstract filter for related node count for documents.
+ *
+ * This finds the number of "target" nodes which have an entity reference
+ * field pointing to the "root" node in question, i.e. a reverse reference.
  */
 class AbstractRelatedNodeCountFilter extends NumericFilter {
 
-  public function defaultExposeOptions() {
-    parent::defaultExposeOptions();
-  }
-  public function defineOptions() {
-    return parent::defineOptions();
-  }
+  /**
+   * Bundle of target nodes.
+   *
+   * @var string
+   */
+  protected $node_type = '';
+
+  /**
+   * Bundle of root nodes.
+   *
+   * @var string
+   */
+  protected $root_node_type = '';
+
+  /**
+   * Field on the target node that points to the root node.
+   *
+   * @var string
+   */
+  protected $relating_field = '';
+
   /**
    * {@inheritdoc}
    */
-  public function buildQuery($node_type) {
+  public function query() {
     $this->ensureMyTable();
 
     $database = \Drupal::database();
 
     // Create subquery to get document IDs with their review counts
     $subquery = $database->select('node', 'n');
-    $subquery->leftJoin('node__' . IndexingStudyUtils::ASSIGNMENT_DOCUMENT_FIELD, 'fd',
-      'n.nid = fd.' . IndexingStudyUtils::ASSIGNMENT_DOCUMENT_FIELD . '_target_id');
+    $subquery->leftJoin('node__' . $this->relating_field, 'fd',
+      'n.nid = fd.' . $this->relating_field . '_target_id');
     $subquery->leftJoin('node', 'related_nodes', 'fd.entity_id = related_nodes.nid AND related_nodes.type = :node_type', [
-      ':node_type' => $node_type,
+      ':node_type' => $this->node_type,
     ]);
 
     $subquery->addField('n', 'nid', 'document_id');
     $subquery->addExpression('COUNT(related_nodes.nid)', 'assignment_count');
-    $subquery->condition('n.type', IndexingStudyUtils::DOCUMENT_BUNDLE)
+    $subquery->condition('n.type', $this->root_node_type)
       ->groupBy('n.nid');
 
     $having_condition = $this->buildHavingCondition();
@@ -95,8 +112,6 @@ class AbstractRelatedNodeCountFilter extends NumericFilter {
       default:
         return NULL;
     }
-
   }
-
 
 }

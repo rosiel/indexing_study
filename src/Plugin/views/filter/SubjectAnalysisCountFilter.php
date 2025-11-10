@@ -11,22 +11,19 @@ use Drupal\indexing_study\IndexingStudyUtils;
  */
 class SubjectAnalysisCountFilter extends AbstractRelatedNodeCountFilter {
 
-  public function defaultExposeOptions() {
-    parent::defaultExposeOptions();
-  }
+  /**
+   * @inheritdoc
+   */
+  protected $node_type = IndexingStudyUtils::SUBJECT_ANALYSIS_BUNDLE;
 
   /**
-   * {@inheritdoc}
+   * @inheritdoc
    */
-  public function defineOptions() {
-    return parent::defineOptions();
-  }
+  protected $relating_field = IndexingStudyUtils::ASSIGNMENT_DOCUMENT_FIELD;
 
   /**
-   * {@inheritdoc}
+   * @inheritdoc
    */
-  public function query() {
-    $this->buildQuery(IndexingStudyUtils::SUBJECT_ANALYSIS_BUNDLE);
-  }
+  protected $root_node_type = IndexingStudyUtils::DOCUMENT_BUNDLE;
 
 }
