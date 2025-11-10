@@ -2,26 +2,40 @@
 
 namespace Drupal\indexing_study;
 
-use Drupal\storage\Entity\StorageInterface;
+use Drupal\Core\Entity\EntityStorageException;
+use Drupal\node\Entity\Node;
+use Drupal\node\NodeInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\bibcite_entity\Entity\ReferenceInterface;
+use Drupal\user\Entity\User;
 use Drupal\user\UserInterface;
+use Psr\Log\LoggerInterface;
 
-class IndexingStudyUtils {
-  // Store the field on reference that points to the pool.
-  const MEMBER_OF_POOL_FIELD = 'field_pool';
-  // Store the machine name of the 'assignment' bundle.
-  const ASSIGNMENT_BUNDLE = 'assignment';
-  // Store teh machine name of the 'pool' bundle.
-  const POOL_BUNDLE = 'pool';
-  // Store the field on assignment that points to the pool.
-  const ASSIGNMENT_POOL_FIELD = 'field_pool';
+class IndexingStudyUtils
+{
+  // The machine name of the 'study' content type.
+  const STUDY_BUNDLE = 'ais_study';
+  // The machine name of the 'assignment' content type.
+  const ASSIGNMENT_BUNDLE = 'ais_assignment';
+  // The machine name of the 'document' content type.
+  const DOCUMENT_BUNDLE = 'ais_document';
+  // The machine name of the 'subject analysis' content type.
+  const SUBJECT_ANALYSIS_BUNDLE = 'ais_subject_analysis';
+  // The machine name of the 'consensus' content type.
+  const CONSENSUS_BUNDLE = 'ais_consensus';
+  // The machine name of the 'agreement' content type.
+  const AGREEMENT_BUNDLE = 'ais_agreement';
+  // The field on a study that points to the users/reviewers.
+  const STUDY_REVIEWERS_FIELD = 'field_ais_participants';
+  // The field on a document that points to the study.
+  const DOCUMENT_STUDY_FIELD = 'field_ais_study';
+  // Store the field on
+
   // Store the field on assignment that points to user.
-  const ASSIGNMENT_USER_FIELD = 'field_user';
+  const ASSIGNMENT_USER_FIELD = 'field_ais_reviewer';
   // Store the field on assignment that points to a citation item.
-  const ASSIGNMENT_CITATION_FIELD = 'field_citation';
-  // Store the field on a response that points to an assignment
-  const RESPONSE_ASSIGNMENT_FIELD = 'field_assignment';
+  const ASSIGNMENT_DOCUMENT_FIELD = 'field_ais_document';
+  // Store the field on a subject analysis that points to an assignment
+  const SUBJECT_ANALYSIS_ASSIGNMENT_FIELD = 'field_ais_assignment';
 
   /**
    * The entity type manager.
@@ -31,123 +45,148 @@ class IndexingStudyUtils {
   protected $entityTypeManager;
 
   /**
+   * The logging interface.
+   *
+   * @var \Psr\Log\LoggerInterface
+   */
+  protected $logger;
+
+  /**
    * Constructor.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
    */
   public function __construct(
     EntityTypeManagerInterface $entityTypeManager,
-  ) {
+    LoggerInterface            $logger
+  )
+  {
     $this->entityTypeManager = $entityTypeManager;
+    $this->logger = $logger;
   }
 
-  /**
-   * Get a list of all pools.
-   *
-   * @return array
-   */
-  public function getPools() {
-    return $this->entityTypeManager->getStorage('storage')
-      ->getQuery()
-      ->condition('type', self::POOL_BUNDLE)
-      ->accessCheck(TRUE)
-      ->execute();
-  }
 
-  /**
-   * @param \Drupal\storage\Entity\StorageInterface $pool
-   * @return array
-   */
-
-  public function getReferencesInPool(StorageInterface $pool) {
-    if (!$this->entityTypeManager->getStorage('field_storage_config')->load('bibcite_reference.' . self::MEMBER_OF_POOL_FIELD)) {
-      return [];
-    }
-    $reference_ids = $this->entityTypeManager->getStorage('bibcite_reference')->getQuery()
-      ->accessCheck(TRUE)
-      ->condition(self::MEMBER_OF_POOL_FIELD, $pool->id())
-      ->execute();
-    if (empty($reference_ids)) {
-      return [];
-    }
-    return $this->entityTypeManager->getStorage('bibcite_reference')->loadMultiple($reference_ids);
-  }
-
-  public function getAssignmentsForReference(ReferenceInterface $reference) {
-    if (!$this->entityTypeManager->getStorage('field_storage_config')->load('storage.' . self::ASSIGNMENT_POOL_FIELD)) {
-      return [];
-    }
-    $assignment_ids = $this->entityTypeManager->getStorage('storage')->getQuery()
-      ->accessCheck(TRUE)
-      ->condition(self::MEMBER_OF_POOL_FIELD, $reference->id())
-      ->execute();
-    if (empty($assignment_ids)) {
-      return [];
-    }
-    return $this->entityTypeManager->getStorage('bibcite_reference')->loadMultiple($assignment_ids);
-  }
-
-  public function countAssignments(ReferenceInterface $reference) {
-    if (!$this->entityTypeManager->getStorage('field_storage_config')->load('storage.' . self::ASSIGNMENT_POOL_FIELD)) {
-      return [];
-    }
-    $assignment_ids = $this->entityTypeManager->getStorage('storage')->getQuery()
-      ->accessCheck(TRUE)
-      ->condition(self::MEMBER_OF_POOL_FIELD, $reference->id())
-      ->execute();
-    if (empty($assignment_ids)) {
-      return [];
-    }
-    return count($assignment_ids);
-  }
-
-  /**
-   * @param \Drupal\storage\Entity\StorageInterface $pool
-   * @param \Drupal\user\Entity\User $user
-   * @return array
-   */
-
-  public function getAssignmentsInPool(StorageInterface $pool, UserInterface $user) {
-    $assignment_ids = $this->entityTypeManager->getStorage('storage')->getQuery()
-      ->accessCheck(TRUE)
-      ->condition(self::ASSIGNMENT_POOL_FIELD, $pool->id())
-      ->condition(self::ASSIGNMENT_USER_FIELD, $user->id())
-      ->execute();
-    return $assignment_ids;
-  }
-
-  /**
-   * @param \Drupal\storage\Entity\StorageInterface $pool
-   * @param \Drupal\user\Entity\User $user
-   * @return array
-   */
-
-  public function getAssignmentsToDoInPool(StorageInterface $pool, UserInterface $user) {
-    $assignment_ids = $this->entityTypeManager->getStorage('storage')->getQuery()
-      ->accessCheck(TRUE)
-      ->condition(self::ASSIGNMENT_POOL_FIELD, $pool->id())
-      ->condition(self::ASSIGNMENT_USER_FIELD, $user->id())
-      ->execute();
-    $assignment_ids = array_unique($assignment_ids);
-    if (count($assignment_ids) == 0) {
-      return [];
-    }
-    // Get all responses that point to those assignments
-    $response_ids = $this->entityTypeManager->getStorage('storage')->getQuery()
-      ->accessCheck(TRUE)
-      ->condition(self::RESPONSE_ASSIGNMENT_FIELD, $assignment_ids, 'IN')
-      ->execute();
-    // Get the "completed" assignment IDs
-    $completed_assignments = [];
-    $responses = $this->entityTypeManager->getStorage('storage')->loadMultiple($response_ids);
-    foreach ($responses as $response) {
-      $assignment_id = $response->get(self::RESPONSE_ASSIGNMENT_FIELD)->getValue()[0]['target_id'];
-      if ($assignment_id) {
-        if (!in_array($assignment_id, $completed_assignments)) {
-          $completed_assignments[] = $assignment_id;
-        }
+  private function extract_target_ids(array $my_array)
+  {
+    $return_array = [];
+    foreach ($my_array as $value) {
+      if (isset($value['target_id'])) {
+        $return_array[] = $value['target_id'];
       }
     }
-    return array_diff($assignment_ids, $completed_assignments);
+    return $return_array;
+  }
+
+  public function createAssignmentsForStudy(NodeInterface $study, $reviewers, $reviewers_per_document) {
+    $all_reviewer_ids = array_map(function($u) {
+      return $u->id();
+    }, $reviewers);
+
+    $documentIds = $this->getDocumentIdsInStudy($study);
+    foreach ($documentIds as $documentId) {
+      $assignments = $this->getAssignmentsForDocumentId($documentId);
+
+      while (count($assignments) < $reviewers_per_document) {
+        $existing_reviewers = array_map(function ($a) {
+          return $a->get(self::ASSIGNMENT_USER_FIELD)->getValue()[0]['target_id'];
+        }, $assignments);
+        $eligible_reviewers = array_diff($all_reviewer_ids, $existing_reviewers);
+        if (count($eligible_reviewers) < 1) {
+          $this->logger->error("No reviewer could be assigned for document {$documentId}.");
+
+          return NULL;
+        }
+        $lucky_index = array_rand($eligible_reviewers);
+        $new_assignment = $this->createAssignment($documentId, $eligible_reviewers[$lucky_index]);
+        if (!$new_assignment) {
+          $this->logger->error("Assignments could not be completed for document {$documentId}.");
+          return NULL;
+        }
+        $assignments = $this->getAssignmentsForDocumentId($documentId);
+      }
+    }
+    return True;
+  }
+
+  public function getAssignmentsForDocumentId($documentId) {
+    $assignment_ids = $this->entityTypeManager->getStorage('node')->getQuery()
+      ->accessCheck(TRUE)
+      ->condition('status', 1)
+      ->condition('type', self::ASSIGNMENT_BUNDLE)
+      ->condition(self::ASSIGNMENT_DOCUMENT_FIELD, $documentId)
+      ->execute();
+    return $this->entityTypeManager->getStorage('node')->loadMultiple($assignment_ids);
+
+  }
+  public function createAssignment(int $documentId, int $userId)
+  {
+    $document = $this->entityTypeManager->getStorage('node')->load($documentId);
+    $user = $this->entityTypeManager->getStorage('user')->load($userId);
+    // Test if document is a document
+    if ($document->bundle() != self::DOCUMENT_BUNDLE) {
+      $this->logger->error("Assignment requires a 'document' node, '" . $document->bundle() . "' given.");
+      return NULL;
+    }
+    // Test if user is a member of the document's study.
+    $studies = $document->get(self::DOCUMENT_STUDY_FIELD)->getValue();
+    $study_id = $studies[0]['target_id'];
+    $study = $this->entityTypeManager->getStorage('node')->load($study_id);
+    $users_in_study = $this->extract_target_ids($study->get(self::STUDY_REVIEWERS_FIELD)->getValue());
+    if (!in_array($user->id(), $users_in_study)) {
+      $this->logger->error("User " . $user->getAccountName() . " must be a member of the document's study.");
+      return NULL;
+    }
+    // Test if assignment of document to user already exists.
+    if ($this->assignment_exists($document, $user)) {
+      $this->logger->error("Can't create duplicate assignment of @document to @user.", [
+        '@document' => $document->id(),
+        '@user' => $user->getAccountName()
+      ]);
+      return NULL;
+    }
+
+    // Create assignment.
+    $assignment = Node::create([
+      'type' => self::ASSIGNMENT_BUNDLE,
+      'title' => 'Assignment of ' . $document->id() . ' to ' . $user->getAccountName()
+    ]);
+    $assignment->set(self::ASSIGNMENT_USER_FIELD, ['target_id' => $user->id()]);
+    $assignment->set(self::ASSIGNMENT_DOCUMENT_FIELD, ['target_id' => $document->id()]);
+    try {
+      $assignment->save();
+      return $assignment->id();
+    } catch (EntityStorageException $e) {
+      $this->logger->error('Could not create assignment. Error: ' . $e);
+      return NULL;
+    }
+  }
+
+
+  public function assignment_exists(NodeInterface $document, UserInterface $user)
+  {
+    $assignment_ids = $this->entityTypeManager->getStorage('node')->getQuery()
+      ->accessCheck(TRUE)
+      ->condition('type', self::ASSIGNMENT_BUNDLE)
+      ->condition(self::ASSIGNMENT_DOCUMENT_FIELD, $document->id())
+      ->condition(self::ASSIGNMENT_USER_FIELD, $user->id())
+      ->execute();
+    if (!empty($assignment_ids)) {
+      return True;
+    } else {
+      return False;
+    }
+  }
+
+  /**
+   * @param \Drupal\node\NodeInterface $study
+   * @return array
+   */
+  public function getDocumentIdsInStudy(NodeInterface $study)
+  {
+    $document_ids = $this->entityTypeManager->getStorage('node')->getQuery()
+      ->accessCheck(TRUE)
+      ->condition(self::DOCUMENT_STUDY_FIELD, $study->id())
+      ->execute();
+    return $document_ids;
   }
 }

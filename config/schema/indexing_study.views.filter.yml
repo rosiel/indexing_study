@@ -1,0 +1,7 @@
+views.filter.assignment_count_filter:
+  type: views.filter.numeric
+  label: "Assignment Count"
+
+views.filter_value.assignment_count_filter:
+  type: views.filter_value.numeric
+  label: "Assignment Count filter value"

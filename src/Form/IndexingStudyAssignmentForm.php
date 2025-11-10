@@ -1,14 +1,41 @@
 <?php
 namespace Drupal\indexing_study\Form;
 
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\storage\Entity\Storage;
-use Drupal\storage\Entity\StorageInterface;
+use Drupal\Core\Link;
+use Drupal\node\NodeInterface;
 use Drupal\indexing_study\IndexingStudyUtils;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class IndexingStudyAssignmentForm extends FormBase {
+
+  /**
+   * The entity type manager.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   */
+  protected $entityTypeManager;
+
+  /**
+   * Indexing study utilities.
+   *
+   * @var \Drupal\indexing_study\IndexingStudyUtils
+   */
+  protected $utils;
+
+  public function __construct(EntityTypeManagerInterface $entityTypeManager, IndexingStudyUtils $utils) {
+    $this->entityTypeManager = $entityTypeManager;
+    $this->utils = $utils;
+  }
+
+  public static function create(ContainerInterface $container) {
+    return new static (
+      $container->get('entity_type.manager'),
+      $container->get('indexing_study.utils')
+    );
+  }
 
   /**
    * {@inheritdoc }
@@ -20,20 +47,44 @@ class IndexingStudyAssignmentForm extends FormBase {
   /**
    * {@inheritdoc }
    */
-  public function buildForm(array $form, FormStateInterface $form_state, StorageInterface $storage = NULL) {
-    $form['pool'] = [
+  public function buildForm(array $form, FormStateInterface $form_state, NodeInterface $study_node = NULL) {
+    if ($study_node) {
+      $study_title = $study_node->getTitle();
+      $reviewers_per_document_value = $study_node->field_ais_reveiwers_per_document->value ?? 5;
+      $edit_study_link = Link::fromTextAndUrl($this->t('Configure Study'), $study_node->toUrl('edit-form'))->toRenderable();
+      $documents_to_assign = (int)$study_node->getDocCountInStudyAwaitingAssignment();
+    }
+    // TODO: Get summary of assignments needed.
+
+    $form['study'] = [
       '#type' => 'value',
-      '#value' => $storage,
+      '#value' => $study_node,
     ];
-    $form['reviewers_per_reference'] = [
-      '#type' => 'number',
-      '#title' => $this->t('Reviewers per reference'),
-      '#default_value' => 2,
+    $form['reviewers_per_document'] = [
+      '#type' => 'value',
+      '#title' => $this->t('Reviewers per document'),
+      '#value' => $reviewers_per_document_value,
     ];
-    $form['users'] = [
+    $form['study_info_display'] = [
+      '#type' => 'markup',
+      '#title' => $this->t('Reviewers per document'),
+      '#markup' => "<strong>Study title:</strong> " . $study_title . '<br/>',
+    ];
+    $form['study_info_edit'] = [
+      '#type' => 'markup',
+      'markup' => $edit_study_link,
+    ];
+    $users_in_study = $study_node->get('field_ais_participants')->getValue();
+    $user_options = array();
+    foreach($users_in_study as $user_in_study) {
+      $user_id = $user_in_study['target_id'];
+      $user = $this->entityTypeManager->getStorage('user')->load($user_id);
+      $user_options[$user_id] = $user->getAccountName();
+    }
+    $form['reviewers'] = [
       '#type' => 'checkboxes',
       '#title' => $this->t('Select reviewers to assign.'),
-      '#options' => array('alex' => 'alex', 'rosie'=>'rosie', 'lori' => 'lori'),
+      '#options' => $user_options,
     ];
     $form['submit'] = [
       '#type' => 'submit',
@@ -46,17 +97,17 @@ class IndexingStudyAssignmentForm extends FormBase {
    * {@inheritdoc }
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
-    // Error if pool can't be loaded.
-    if (! $form_state->getValue('pool') instanceof StorageInterface) {
-      $form_state->setErrorByName('pool', $this->t('Cannot compute pool.'));
+    // Error if study can't be loaded. TODO: test for bundle.
+    if (! $form_state->getValue('study') instanceof NodeInterface) {
+      $form_state->setErrorByName('study', $this->t('Study cannot be loaded.'));
     }
     // Error if less than 1 reviewer-per-reference.
-    if ($form_state->getValue('reviewers_per_reference') < 1) {
-      $form_state->setErrorByName('reviewers_per_reference', $this->t('The reviewers per reference must be greater than 1.'));
+    if ($form_state->getValue('reviewers_per_document') < 1) {
+      $form_state->setErrorByName('reviewers_per_document', $this->t('The reviewers per document must be greater than 1.'));
     }
     // Error if fewer users than reviewers-per-reference.
-    if (count(array_filter($form_state->getValue('users'))) < $form_state->getValue('reviewers_per_reference')) {
-      $form_state->setErrorByName('users',$this->t('There must be at least as many users as users per reference.'));
+    if (count(array_filter($form_state->getValue('reviewers'))) < $form_state->getValue('reviewers_per_reference')) {
+      $form_state->setErrorByName('reviewers',$this->t('There must be at least as many reviewers as reviewers per document.'));
     }
     parent::validateForm($form, $form_state);
   }
@@ -65,24 +116,20 @@ class IndexingStudyAssignmentForm extends FormBase {
    * {@inheritdoc }
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $utils = \Drupal::service('indexing_study.utils');
 
-    // Get all references in pool.
-    $pool = $form_state->getValue('pool');
-    $pool_references = $utils->getReferencesInPool($pool);
-
-    // For each reference in pool
-    foreach($pool_references as $reference){
-      // Does it have fewer than needed?
-      while ($utils->countAssignments($reference) < $form_state->getValue('reviewers_per_reference')) {
-        // add reference
+    $study = $form_state->getValue('study');
+    $reviewers_per_document = $form_state->getValue('reviewers_per_document');
+    $all_users = $form_state->getValue('reviewers');
+    $users = [];
+    foreach ($all_users as $user_id => $value) {
+      if ($value != 0) {
+        $user = $this->entityTypeManager->getStorage('user')->load($user_id);
+        $users[] = $user;
       }
-
     }
-
-    // Who is currently assigned to review it?
-    // load reviewers
-    // Select (need) reviewers from reviewers not already assigned
-    // Create assignments for each reviewer.
+    $assignments_created = $this->utils->createAssignmentsForStudy($study, $users, $reviewers_per_document);
+    if (!$assignments_created) {
+      $this->messenger()->addError($this->t('An error occurred. Check the logs for details.'));
+    }
   }
 }

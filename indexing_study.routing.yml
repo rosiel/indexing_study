@@ -1,27 +1,34 @@
-indexing_study.manage:
-  path: '/study/manage'
+indexing_study.study:
+  path: '/study/{node}'
   defaults:
-    _controller: '\Drupal\indexing_study\Controller\IndexingStudyController::manage'
-    _title: 'Manage Pools and Assignments'
+    _controller: '\Drupal\indexing_study\Controller\IndexingStudyController::study'
+    _title: 'Study Summary'
   requirements:
     _permission: 'administer content'
-indexing_study.assign:
-  path: '/study/{storage}/assign'
-  defaults:
-    _form: '\Drupal\indexing_study\Form\IndexingStudyAssignmentForm'
-    _title: 'Assign this Pool'
-    entity_type_id: storage
-  requirements:
-    _permission: 'administer content'
-indexing_study.respond:
-  path: '/study/{storage}/respond'
-  defaults:
-    _controller: '\Drupal\indexing_study\Controller\IndexingStudyController::respond'
-    _title: 'Adding your responses'
-  requirements:
-    _permission: 'add response storage entities'
   options:
     parameters:
-      storage:
-        type: entity:storage
+      node:
+        type: entity:node
+indexing_study.assign:
+  path: '/study/{study_node}/assign'
+  defaults:
+    _form: '\Drupal\indexing_study\Form\IndexingStudyAssignmentForm'
+    _title: 'Create assignments for this Study'
+  options:
+    parameters:
+      study_node:
+        type: entity:node
+  requirements:
+    _permission: 'administer content'
+indexing_study.analyze:
+  path: '/study/{study_node}/analyze'
+  defaults:
+    _controller: '\Drupal\indexing_study\Controller\IndexingStudyController::analyze'
+    _title: 'Analyze subjects'
+  requirements:
+    _permission: 'administer content'
+  options:
+    parameters:
+      study_node:
+        type: entity:node
     no-cache: 'TRUE'
