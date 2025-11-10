@@ -14,30 +14,15 @@ use Drupal\indexing_study\Plugin\views\field\AbstractRelatedNodeCountField;
  */
 class AssignmentCountField extends AbstractRelatedNodeCountField {
 
-  /**
-   * {@inheritdoc}
-   */
-  protected function defineOptions() {
-    $options = parent::defineOptions();
-    // Define any custom options for your field here.
-    return $options;
-  }
+  protected $node_type = IndexingStudyUtils::ASSIGNMENT_BUNDLE;
+  protected $relating_field = IndexingStudyUtils::ASSIGNMENT_DOCUMENT_FIELD;
+
+  protected $root_node_type = IndexingStudyUtils::DOCUMENT_BUNDLE;
+
 
   public function query() {
-    // Do nothing - we're computing the value in render().
+    // Do nothing - we're computing the value in parent::render().
   }
-  /**
-   * {@inheritdoc}
-   */
-  public function render(ResultRow $values) {
-    $entity = $this->getEntity($values);
 
-    if (!$entity instanceof NodeInterface || $entity->bundle() !== IndexingStudyUtils::DOCUMENT_BUNDLE) {
-      return '0';
-    }
-
-    $count = $this->getRelatedNodeCount($entity->id(), IndexingStudyUtils::ASSIGNMENT_BUNDLE);
-    return $count ?: '0';
-  }
 
 }

@@ -12,6 +12,9 @@ use Drupal\indexing_study\IndexingStudyUtils;
  */
 class AbstractRelatedNodeCountField extends FieldPluginBase {
 
+  protected $node_type = '';
+  protected $root_node_type = '';
+  protected $relating_field = '';
   /**
    * {@inheritdoc}
    */
@@ -21,13 +24,27 @@ class AbstractRelatedNodeCountField extends FieldPluginBase {
   }
 
   /**
+   * {@inheritdoc}
+   */
+  public function render(ResultRow $values) {
+    $entity = $this->getEntity($values);
+
+    if (!$entity instanceof NodeInterface || $entity->bundle() !== $this->root_node_type) {
+      return '0';
+    }
+
+    $count = $this->getRelatedNodeCount($entity->id());
+    return $count ?: '0';
+  }
+
+  /**
    * Get the related node count for a document.
    */
-  protected function getRelatedNodeCount($document_id, $node_type): int {
+  protected function getRelatedNodeCount($document_id): int {
     $query = \Drupal::entityQuery('node')
-      ->condition('type', $node_type)
+      ->condition('type', $this->node_type)
       ->condition('status', 1)
-      ->condition(IndexingStudyUtils::ASSIGNMENT_DOCUMENT_FIELD, $document_id) // Replace with your actual field name
+      ->condition($this->relating_field, $document_id)
       ->accessCheck(FALSE);
 
     // In Drupal 11, count() returns int directly

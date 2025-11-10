@@ -5,13 +5,14 @@ use Drupal\indexing_study\IndexingStudyUtils;
 use Drupal\indexing_study\Plugin\views\field\AbstractRelatedNodeCountField;
 
 /**
- * Custom field to display subject analysis count.
+ * Custom field to display agreement count.
  *
- * @ViewsField("subject_analysis_count_field")
+ * @ViewsField("agreement_count_field")
  */
-class SubjectAnalysisCountField extends AbstractRelatedNodeCountField {
+class AgreementCountField extends AbstractRelatedNodeCountField
+{
 
-  protected $node_type = IndexingStudyUtils::SUBJECT_ANALYSIS_BUNDLE;
+  protected $node_type = IndexingStudyUtils::AGREEMENT_BUNDLE;
   protected $relating_field = IndexingStudyUtils::ASSIGNMENT_DOCUMENT_FIELD;
 
   protected $root_node_type = IndexingStudyUtils::DOCUMENT_BUNDLE;

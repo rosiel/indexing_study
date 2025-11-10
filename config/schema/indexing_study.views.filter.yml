@@ -13,3 +13,19 @@ views.filter.subject_analysis_count_filter:
 views.filter_value.subject_analysis_count_filter:
   type: views.filter_value.numeric
   label: "Subject Analysis Count filter value"
+
+views.filter.agreement_count_filter:
+  type: views.filter.numeric
+  label: "Agreement Count"
+
+views.filter_value.agreement_count_filter:
+  type: views.filter_value.numeric
+  label: "Agreement Count filter value"
+
+views.filter.consensus_count_filter:
+  type: views.filter.numeric
+  label: "Consensus Count"
+
+views.filter_value.consensus_count_filter:
+  type: views.filter_value.numeric
+  label: "Consensus Count filter value"

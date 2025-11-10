@@ -28,4 +28,30 @@ function indexing_study_views_data_alter(&$data) {
       'id' => 'subject_analysis_count_filter',
     ],
   ];
+  $data['node']['agreement_count'] = [
+    'title' => t('Agreement Count'),
+    'field' => [
+      'title' => t('Agreement Count'),
+      'help' => t("Display the number of Agreements associated with a document."),
+      'id' => 'agreement_count_field',
+    ],
+    'filter' => [
+      'title' => t('Agreement Count'),
+      'help' => t("Limit by the number of Agreements associated with a document"),
+      'id' => 'agreement_count_filter',
+    ],
+  ];
+  $data['node']['consensus_count'] = [
+    'title' => t('Consensus Count'),
+    'field' => [
+      'title' => t('Consensus Count'),
+      'help' => t("Display the number of Consensuses associated with a document."),
+      'id' => 'consensus_count_field',
+    ],
+    'filter' => [
+      'title' => t('Consensus Count'),
+      'help' => t("Limit by the number of Consensuses associated with a document"),
+      'id' => 'consensus_count_filter',
+    ],
+  ];
 }
