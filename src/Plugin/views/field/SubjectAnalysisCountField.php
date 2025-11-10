@@ -1,18 +1,17 @@
 <?php
 namespace Drupal\indexing_study\Plugin\views\field;
 
-use Drupal\views\Plugin\views\field\FieldPluginBase;
-use Drupal\views\ResultRow;
-use Drupal\node\NodeInterface;
 use Drupal\indexing_study\IndexingStudyUtils;
 use Drupal\indexing_study\Plugin\views\field\AbstractRelatedNodeCountField;
+use Drupal\node\NodeInterface;
+use Drupal\views\ResultRow;
 
 /**
- * Custom field to display assignment count.
+ * Custom field to display subject analysis count.
  *
- * @ViewsField("assignment_count_field")
+ * @ViewsField("subject_analysis_count_field")
  */
-class AssignmentCountField extends AbstractRelatedNodeCountField {
+class SubjectAnalysisCountField extends AbstractRelatedNodeCountField {
 
   /**
    * {@inheritdoc}
@@ -36,7 +35,7 @@ class AssignmentCountField extends AbstractRelatedNodeCountField {
       return '0';
     }
 
-    $count = $this->getRelatedNodeCount($entity->id(), IndexingStudyUtils::ASSIGNMENT_BUNDLE);
+    $count = $this->getRelatedNodeCount($entity->id(), IndexingStudyUtils::SUBJECT_ANALYSIS_BUNDLE);
     return $count ?: '0';
   }
 

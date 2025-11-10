@@ -2,31 +2,31 @@
 namespace Drupal\indexing_study\Plugin\views\filter;
 
 use Drupal\indexing_study\Plugin\views\filter\AbstractRelatedNodeCountFilter;
-use Drupal\Core\Database\Query\Condition;
 use Drupal\indexing_study\IndexingStudyUtils;
 
 /**
- * Custom field to display review count for documents.
+ * Custom field to display subject analysis count for documents.
  *
- * @ViewsFilter("assignment_count_filter")
+ * @ViewsFilter("subject_analysis_count_filter")
  */
-class AssignmentCountFilter extends AbstractRelatedNodeCountFilter {
-  
+class SubjectAnalysisCountFilter extends AbstractRelatedNodeCountFilter {
+
   public function defaultExposeOptions() {
     parent::defaultExposeOptions();
   }
+
   /**
    * {@inheritdoc}
    */
   public function defineOptions() {
     return parent::defineOptions();
   }
+
   /**
    * {@inheritdoc}
    */
   public function query() {
-    $this->buildQuery(IndexingStudyUtils::ASSIGNMENT_BUNDLE);
+    $this->buildQuery(IndexingStudyUtils::SUBJECT_ANALYSIS_BUNDLE);
   }
-
 
 }

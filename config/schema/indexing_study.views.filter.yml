@@ -5,3 +5,11 @@ views.filter.assignment_count_filter:
 views.filter_value.assignment_count_filter:
   type: views.filter_value.numeric
   label: "Assignment Count filter value"
+
+views.filter.subject_analysis_count_filter:
+  type: views.filter.numeric
+  label: "Subject Analysis Count"
+
+views.filter_value.subject_analysis_count_filter:
+  type: views.filter_value.numeric
+  label: "Subject Analysis Count filter value"
