@@ -1,0 +1,8 @@
+.ais-subjects-wrapper {
+  padding: 3em;
+  display: flex;
+  column-gap: 3em;
+}
+.ais-subjects-left {}
+.ais_subjects-right {}
+

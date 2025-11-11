@@ -1,7 +1,11 @@
 <?php
 namespace Drupal\indexing_study\Entity;
 
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\indexing_study\IndexingStudyUtils;
+use Drupal\migrate\Plugin\migrate\process\ArrayBuild;
 use Drupal\node\Entity\Node;
+use Psr\Log\LoggerInterface;
 
 class AisStudy extends Node implements  AisStudyInterface {
 
@@ -29,7 +33,17 @@ class AisStudy extends Node implements  AisStudyInterface {
   public function getDocCountInStudyAwaitingReviewByUser(): string {
     return (string)$this->count_rows_in_view('indexing_study_node_views', '5_needs_review_by_user');
   }
-
+  /**
+   * @param \Drupal\node\NodeInterface $study
+   * @return array
+   */
+  public function getAllDocumentIds()  {
+    $document_ids = $this->entityTypeManager->getStorage('node')->getQuery()
+      ->accessCheck(TRUE)
+      ->condition(IndexingStudyUtils::DOCUMENT_STUDY_FIELD, $this->id())
+      ->execute();
+    return $document_ids;
+  }
 
 
 

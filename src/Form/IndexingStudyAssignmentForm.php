@@ -5,12 +5,13 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Link;
+use Drupal\Core\Messenger\MessengerTrait;
 use Drupal\node\NodeInterface;
 use Drupal\indexing_study\IndexingStudyUtils;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class IndexingStudyAssignmentForm extends FormBase {
-
+  use MessengerTrait;
   /**
    * The entity type manager.
    *
@@ -48,12 +49,15 @@ class IndexingStudyAssignmentForm extends FormBase {
    * {@inheritdoc }
    */
   public function buildForm(array $form, FormStateInterface $form_state, NodeInterface $study_node = NULL) {
-    if ($study_node) {
-      $study_title = $study_node->getTitle();
-      $reviewers_per_document_value = $study_node->field_ais_reveiwers_per_document->value ?? 5;
-      $edit_study_link = Link::fromTextAndUrl($this->t('Configure Study'), $study_node->toUrl('edit-form'))->toRenderable();
-      $documents_to_assign = (int)$study_node->getDocCountInStudyAwaitingAssignment();
+    if (!$study_node or $study_node->bundle() != IndexingStudyUtils::STUDY_BUNDLE) {
+      $this->messenger()->addError($this->t('Could not load study.'));
+      return $form;
     }
+
+    $study_title = $study_node->getTitle();
+    $reviewers_per_document_value = $study_node->field_ais_reveiwers_per_document->value ?? 5;
+    $documents_to_assign = (int)$study_node->getDocCountInStudyAwaitingAssignment();
+
     // TODO: Get summary of assignments needed.
 
     $form['study'] = [
@@ -66,13 +70,15 @@ class IndexingStudyAssignmentForm extends FormBase {
       '#value' => $reviewers_per_document_value,
     ];
     $form['study_info_display'] = [
-      '#type' => 'markup',
-      '#title' => $this->t('Reviewers per document'),
       '#markup' => "<strong>Study title:</strong> " . $study_title . '<br/>',
     ];
     $form['study_info_edit'] = [
-      '#type' => 'markup',
-      'markup' => $edit_study_link,
+      '#type' => 'link',
+      '#title' => $this->t("Configure Study"),
+      '#url' => $study_node->toUrl('edit-form'),
+    ];
+    $form['documents_to_assign'] = [
+      '#markup' => '<br/><br/><strong>Documents to assign:</strong> ' . (string)$documents_to_assign,
     ];
     $users_in_study = $study_node->get('field_ais_participants')->getValue();
     $user_options = array();
@@ -90,6 +96,9 @@ class IndexingStudyAssignmentForm extends FormBase {
       '#type' => 'submit',
       '#value' => $this->t('Submit'),
     ];
+    if ($documents_to_assign < 1) {
+      $form['reviewers']['#disabled'] = $form['submit']['#disabled'] = TRUE;
+    }
     return $form;
   }
 
@@ -98,7 +107,7 @@ class IndexingStudyAssignmentForm extends FormBase {
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
     // Error if study can't be loaded. TODO: test for bundle.
-    if (! $form_state->getValue('study') instanceof NodeInterface) {
+    if ((! $form_state->getValue('study') instanceof NodeInterface) or ($form_state->getValue('study')->bundle() != IndexingStudyUtils::STUDY_BUNDLE) ) {
       $form_state->setErrorByName('study', $this->t('Study cannot be loaded.'));
     }
     // Error if less than 1 reviewer-per-reference.

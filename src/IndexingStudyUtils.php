@@ -28,15 +28,18 @@ class IndexingStudyUtils
   const STUDY_REVIEWERS_FIELD = 'field_ais_participants';
   // The field on a document that points to the study.
   const DOCUMENT_STUDY_FIELD = 'field_ais_study';
-  // Store the field on
-
   // Store the field on assignment that points to user.
   const ASSIGNMENT_USER_FIELD = 'field_ais_reviewer';
   // Store the field on assignment that points to a citation item.
   const ASSIGNMENT_DOCUMENT_FIELD = 'field_ais_document';
   // Store the field on a subject analysis that points to an assignment
   const SUBJECT_ANALYSIS_ASSIGNMENT_FIELD = 'field_ais_assignment';
-
+  // Store the field on a subject analysis that points to a document
+  const SUBJECT_ANALYSIS_DOCUMENT_FIELD = 'field_ais_document';
+  // The field on a Consensus that points to the document.
+  const CONSENSUS_DOCUMENT_FIELD = 'field_ais_document';
+  // The field on an Agreement that points to the document.
+  const AGREEMENT_DOCUMENT_FIELD = 'field_ais_document';
   /**
    * The entity type manager.
    *
@@ -55,6 +58,7 @@ class IndexingStudyUtils
    * Constructor.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
+   * @param \Psr\Log\LoggerInterface
    */
   public function __construct(
     EntityTypeManagerInterface $entityTypeManager,
@@ -65,17 +69,6 @@ class IndexingStudyUtils
     $this->logger = $logger;
   }
 
-
-  private function extract_target_ids(array $my_array)
-  {
-    $return_array = [];
-    foreach ($my_array as $value) {
-      if (isset($value['target_id'])) {
-        $return_array[] = $value['target_id'];
-      }
-    }
-    return $return_array;
-  }
 
   public function createAssignmentsForStudy(NodeInterface $study, $reviewers, $reviewers_per_document) {
     $all_reviewer_ids = array_map(function($u) {
@@ -116,8 +109,8 @@ class IndexingStudyUtils
       ->condition(self::ASSIGNMENT_DOCUMENT_FIELD, $documentId)
       ->execute();
     return $this->entityTypeManager->getStorage('node')->loadMultiple($assignment_ids);
-
   }
+
   public function createAssignment(int $documentId, int $userId)
   {
     $document = $this->entityTypeManager->getStorage('node')->load($documentId);
@@ -131,7 +124,7 @@ class IndexingStudyUtils
     $studies = $document->get(self::DOCUMENT_STUDY_FIELD)->getValue();
     $study_id = $studies[0]['target_id'];
     $study = $this->entityTypeManager->getStorage('node')->load($study_id);
-    $users_in_study = $this->extract_target_ids($study->get(self::STUDY_REVIEWERS_FIELD)->getValue());
+    $users_in_study = array_column($study->get(self::STUDY_REVIEWERS_FIELD)->getValue(), 'target_id');
     if (!in_array($user->id(), $users_in_study)) {
       $this->logger->error("User " . $user->getAccountName() . " must be a member of the document's study.");
       return NULL;
@@ -161,7 +154,6 @@ class IndexingStudyUtils
     }
   }
 
-
   public function assignment_exists(NodeInterface $document, UserInterface $user)
   {
     $assignment_ids = $this->entityTypeManager->getStorage('node')->getQuery()
@@ -188,5 +180,90 @@ class IndexingStudyUtils
       ->condition(self::DOCUMENT_STUDY_FIELD, $study->id())
       ->execute();
     return $document_ids;
+  }
+
+  public function getAssignmentIdsForAnalysis(NodeInterface $study_node) {
+    // Get completed assignments from existing subject analyses
+    $analyses = \Drupal::entityQuery('node')
+      ->condition('type', self::SUBJECT_ANALYSIS_BUNDLE)
+      ->accessCheck(TRUE)
+      ->execute();
+    $completed_assignments = [];
+    foreach ($analyses as $analysis_id) {
+      $analysis_node = \Drupal::entityTypeManager()->getStorage('node')->load($analysis_id);
+      $related_assignment = $analysis_node->get(self::SUBJECT_ANALYSIS_ASSIGNMENT_FIELD)->getValue()[0]['target_id'];
+      if ($related_assignment) {
+        if (!(in_array($related_assignment, $completed_assignments))) {
+          $completed_assignments[] = $related_assignment;
+        }
+      }
+    }
+
+    // Get current user
+    $current_user = \Drupal::currentUser()->id();
+
+    // Get assignments for that user with that study, that aren't completed
+    $assignment_query = \Drupal::entityQuery('node')
+      ->condition('type', 'ais_assignment')
+      ->condition('field_ais_document.entity:node.field_ais_study', $study_node->id())
+      ->condition('field_ais_reviewer', $current_user)
+      ->condition('nid', $completed_assignments, 'NOT IN')
+      ->accessCheck(TRUE);
+    return $assignment_query->execute();
+  }
+
+  public function getDocumentsAwaitingConsensus(NodeInterface $study_node) {
+    if ($study_node->bundle() != self::STUDY_BUNDLE) {
+      return '0';
+    }
+    $database = \Drupal::database();
+    $query = $database->select('node', 'doc');
+    $query->addField('doc', 'nid', 'document_id');
+    $query->addExpression('COUNT(sa.nid)', 'subject_analysis_count');
+    $query->join('node__field_ais_document', 'fadsa', 'doc.nid = fadsa.field_ais_document_target_id');
+    $query->join('node', 'sa', 'sa.nid = fadsa.entity_id AND sa.type = :satype', [':satype' => self::SUBJECT_ANALYSIS_BUNDLE]);
+    $query->join('node__field_ais_study', 'study_field', 'study_field.entity_id = doc.nid AND study_field.field_ais_study_target_id = :study_id', [':study_id' => $study_node->id()]);
+    $query->condition('doc.type', self::DOCUMENT_BUNDLE, '=' );
+    $query->groupBy('doc.nid');
+    $query->having('subject_analysis_count >= :limit', [':limit' => 2]);
+    $subquery = $database->select('node__field_ais_document','fadc');
+    $subquery->join('node', 'con', 'con.nid = fadc.entity_id');
+    $subquery->addField('fadc', 'field_ais_document_target_id', 'document_id');
+    $subquery->condition('con.type', self::CONSENSUS_BUNDLE, '=');
+    $query->condition('doc.nid', $subquery, 'NOT IN');
+    $results = $query->execute()->fetchAll();
+    return array_column($results, 'document_id');
+
+  }
+
+  public function getAnalysesForDocumentId($documentId, $load=False) {
+    $analysis_ids = $this->entityTypeManager->getStorage('node')->getQuery()
+      ->accessCheck(TRUE)
+      ->condition('status', 1)
+      ->condition('type', self::SUBJECT_ANALYSIS_BUNDLE)
+      ->condition(self::SUBJECT_ANALYSIS_DOCUMENT_FIELD, $documentId)
+      ->execute();
+    if ($load) {
+      return $this->entityTypeManager->getStorage('node')->loadMultiple($analysis_ids);
+    }
+    else {
+      return $this->intify_array($analysis_ids);
+    }
+  }
+  private function intify_array($array) {
+    $return_array = [];
+    foreach ($array as $value) {
+      $return_array[] = (int) $value;
+    }
+    return $return_array;
+  }
+  public function getConsensusForDocumentId($documentId) {
+    $analysis_ids = $this->entityTypeManager->getStorage('node')->getQuery()
+      ->accessCheck(TRUE)
+      ->condition('status', 1)
+      ->condition('type', self::CONSENSUS_BUNDLE)
+      ->condition(self::CONSENSUS_DOCUMENT_FIELD, $documentId)
+      ->execute();
+    return $this->entityTypeManager->getStorage('node')->loadMultiple($analysis_ids);
   }
 }

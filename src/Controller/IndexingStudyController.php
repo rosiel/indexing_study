@@ -2,40 +2,88 @@
 
 namespace Drupal\indexing_study\Controller;
 
+use Drupal\Component\Serialization\Yaml;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Url;
+use Drupal\eca_views\Event\Access;
 use Drupal\indexing_study\IndexingStudyUtils;
 use Drupal\node\Entity\Node;
 use Drupal\node\NodeInterface;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 use Drupal\Core\Messenger\MessengerTrait;
-
+use Drupal\Core\Access\AccessResult;
+use Drupal\Core\Session\AccountInterface;
 
 /**
  * Testing a controller.
  */
 class IndexingStudyController extends ControllerBase {
   use MessengerTrait;
+
   /**
-   * Returns the management page.
+   * The IndexingStudyUtils.
+   *
+   * @var \Drupal\indexing_study\IndexingStudyUtils
    */
-  public function study(NodeInterface $node) {
-    if ($node->bundle() != IndexingStudyUtils::STUDY_BUNDLE) {
-      return $this->redirect('<front>');
+  protected $utils;
+
+  /**
+   * IndexingStudyController constructor.
+   *
+   * @param \Drupal\indexing_study\IndexingStudyUtils $utils
+   *   The IndexingStudyUtils.
+   */
+  public function __construct(IndexingStudyUtils $utils) {
+    $this->utils = $utils;
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * @param \Symfony\Component\DependencyInjection\ContainerInterface $container
+   *   The Drupal service container.
+   *
+   * @return static
+   */
+  public static function create(\Symfony\Component\DependencyInjection\ContainerInterface $container) {
+    return new static (
+      $container->get('indexing_study.utils')
+    );
+  }
+
+  /**
+   * Access callback
+   */
+  public function access(AccountInterface $account, NodeInterface $study_node) {
+    if ($study_node->bundle() != $this->utils::STUDY_BUNDLE) {
+      return AccessResult::forbidden();
     }
+    $users_in_study = array_column($study_node->get($this->utils::STUDY_REVIEWERS_FIELD)->getValue(), 'target_id');
+    if (in_array($account->id(), $users_in_study)) {
+          return AccessResult::allowed();
+    }
+    else if ($account->hasPermission('administer content')) {
+      return AccessResult::allowed();
+    }
+    return AccessResult::forbidden();
+  }
+
+  /**
+   * Returns the Study Summary page.
+   */
+  public function study(NodeInterface $study_node) {
     $build = [];
-    $build['#title'] = $node->getTitle();
+    $build['#title'] = $study_node->getTitle();
     $build['study'] = [
       '#type' => 'details',
       '#title' => $this->t("Study details")
     ];
     $build['study']['study_node'] = \Drupal::entityTypeManager()
       ->getViewBuilder('node')
-      ->view($node, 'teaser');
+      ->view($study_node, 'teaser');
     $build['documents'] = [
       '#type' => 'details',
       '#title' => $this->t("Documents (@count in study)", [
-        '@count' => $node->getDocCountInStudy()
+        '@count' => $study_node->getDocCountInStudy()
       ]),
       'ingest' => [
         '#type' => 'link',
@@ -46,7 +94,7 @@ class IndexingStudyController extends ControllerBase {
         ],
       ]
     ];
-    $needs_assignment = $node->getDocCountInStudyAwaitingAssignment();
+    $needs_assignment = $study_node->getDocCountInStudyAwaitingAssignment();
     $build['assignments'] = [
       '#type' => 'details',
       '#title' => $this->t("Assignments (@count awaiting assignment)", [
@@ -57,7 +105,7 @@ class IndexingStudyController extends ControllerBase {
       $build['assignments']['assign'] = [
         '#type' => 'link',
         '#title' => $this->t('Assign'),
-        '#url' => Url::fromRoute('indexing_study.assign', ['study_node' => $node->id()]),
+        '#url' => Url::fromRoute('indexing_study.assign', ['study_node' => $study_node->id()]),
         '#attributes' => [
           'class' => ['button', 'button--primary'],
         ],
@@ -78,76 +126,121 @@ class IndexingStudyController extends ControllerBase {
       ];
     }
 
-    $needs_review = $node->getDocCountInStudyAwaitingReviewByUser();
-    $build['review'] = [
+    $needs_analysis = count($this->utils->getAssignmentIdsForAnalysis($study_node));
+    $build['analysis'] = [
       '#type' => 'details',
-      '#title' => $this->t("Review (@count awaiting your subject analysis)", [
-        '@count' => $needs_review
+      '#title' => $this->t("Analysis (@count awaiting your subject analysis)", [
+        '@count' => $needs_analysis
       ]),
     ];
-
-
+    if ($needs_analysis > 0) {
+      $build['analysis']['analyze'] = [
+        '#type' => 'link',
+        '#title' => $this->t('Analyze'),
+        '#url' => Url::fromRoute('indexing_study.analyze', ['study_node' => $study_node->id()]),
+        '#attributes' => [
+          'class' => ['button', 'button--primary'],
+        ],
+      ];
+    }
+    else {
+      $build['analysis']['analyze'] = [
+        '#type'=> 'container',
+        '#attributes' => [
+          'class' => ['button', 'button-primary', 'is-disabled'],
+          'role' => 'button',
+          'aria-disabled' => 'true',
+          'title' => $this->t('There are no documents to assign.')
+        ],
+        'content' => [
+          '#markup' => $this->t('Analyze')
+        ]
+      ];
+    }
+    $needs_consensus = count($this->utils->getDocumentsAwaitingConsensus($study_node));
+    $build['consensus'] = [
+      '#type' => 'details',
+      '#title' => $this->t("Consensus (@count awaiting consensus)", [
+        '@count' => $needs_consensus
+      ]),
+    ];
+    if ($needs_consensus > 0) {
+      $build['consensus']['consensus'] = [
+        '#type' => 'link',
+        '#title' => $this->t('Create Consensus'),
+        '#url' => Url::fromRoute('indexing_study.consensus', ['study_node' => $study_node->id()]),
+        '#attributes' => [
+          'class' => ['button', 'button--primary'],
+        ],
+      ];
+    }
+    else {
+      $build['consensus']['consensus'] = [
+        '#type'=> 'container',
+        '#attributes' => [
+          'class' => ['button', 'button-primary', 'is-disabled'],
+          'role' => 'button',
+          'aria-disabled' => 'true',
+          'title' => $this->t('There are no documents awaiting consensus.')
+        ],
+        'content' => [
+          '#markup' => $this->t('Create Consensus')
+        ]
+      ];
+    }
     $build['#cache'] = ['max-age' => 0];
     return $build;
   }
 
   /**
-   * Returns the response page for the next assignment in a pool.
+   * Returns the response page for the next assignment in a study.
    */
   public function analyze(NodeInterface $study_node) {
-    if (!$study_node or $study_node->bundle() != IndexingStudyUtils::STUDY_BUNDLE) {
-      $this->messenger()->addError("Study node not found.");
-      return $this->redirect('<front>');
-    }
-    // Get assignments with responses
-    $reviews = \Drupal::entityQuery('node')
-      ->condition('type', IndexingStudyUtils::SUBJECT_ANALYSIS_BUNDLE)
-      ->accessCheck(TRUE)
-      ->execute();
-    $completed_assignments = [];
-    foreach ($reviews as $review_id) {
-      $review_node = \Drupal::entityTypeManager()->getStorage('node')->load($review_id);
-      $related_assignment = $review_node->get(IndexingStudyUtils::SUBJECT_ANALYSIS_ASSIGNMENT_FIELD)->getValue()[0]['target_id'];
-      if ($related_assignment) {
-        if (!(in_array($related_assignment, $completed_assignments))) {
-          $completed_assignments[] = $related_assignment;
-        }
-      }
-    }
-
-    // Get current user
-    $current_user = \Drupal::currentUser()->id();
-    // Get assignments for that user with that pool
-    $assignment_query = \Drupal::entityQuery('node')
-      ->condition('type', 'ais_assignment')
-      ->condition('field_ais_document.entity:node.field_ais_study', $study_node->id())
-      ->condition('field_ais_reviewer', $current_user)
-      ->condition('nid', $completed_assignments, 'NOT IN')
-      ->accessCheck(TRUE);
-    $assignments_4u = $assignment_query->execute();
-    if(count($assignments_4u) < 1) {
-      return ['#markup' => $this->t('You have no outstanding assignments to do for this pool. 🥳')];
+    $awaiting_analysis = $this->utils->getAssignmentIdsForAnalysis($study_node);
+    if(count($awaiting_analysis) < 1) {
+      return ['#markup' => $this->t('There are no outstanding documents needing your analysis in this study. 🥳')];
     }
     else {
-      return [
-        '#title' => $this->t('hi @name', ['@name' => \Drupal::currentUser()->getAccountName()]),
-        '#type' => 'markup',
-        '#markup' => $this->t('@count assignments to review.', [
-          '@count' => count([$assignments_4u])
-        ]),
-        '#cachhe' => ['max-age' => 0]
-      ];
+      $assignment_id = $awaiting_analysis[array_rand($awaiting_analysis)];
+      $assignment = \Drupal::entityTypeManager()->getStorage('node')->load($assignment_id);
+      $document_id = $assignment->get($this->utils::ASSIGNMENT_DOCUMENT_FIELD)->getValue()[0]['target_id'];
+      return $this->redirect(
+        'node.add',
+        ['node_type' => $this->utils::SUBJECT_ANALYSIS_BUNDLE],
+        [
+          'query' => [
+            'assignment' => $assignment_id,
+            'document' => $document_id,
+            'destination' => Url::fromRoute('indexing_study.analyze', ['study_node' => $study_node->id()])->toString()
+          ]
+        ]
+      );
     }
+  }
+  /**
+   * Returns the response page for the next assignment in a study.
+   */
+  public function consensus(NodeInterface $study_node) {
+    $needs_consensus = $this->utils->getDocumentsAwaitingConsensus($study_node);
+    if(count($needs_consensus) < 1) {
+      return ['#markup' => $this->t('There are no outstanding documents needing consensus in this study. 🥳')];
+    }
+    else {
+      $document_id = $needs_consensus[array_rand($needs_consensus)];
+      $analyses = $this->utils->getAnalysesForDocumentId($document_id);
 
-//      return $this->redirect(
-//        'entity.storage.add_form',
-//        ['storage_type' => 'response'],
-//        [
-//          'query' => ['edit[field_assignment][widget][0][target_id]' => $assignment_id],
-//          'absolute' => TRUE,
-//        ]
-//      );
-
+      return $this->redirect(
+        'node.add',
+        ['node_type' => $this->utils::CONSENSUS_BUNDLE],
+        [
+          'query' => [
+            'analyses' => Yaml::encode($analyses),
+            'document' => $document_id,
+            'destination' => Url::fromRoute('indexing_study.consensus', ['study_node' => $study_node->id()])->toString()
+          ]
+        ]
+      );
+    }
   }
 
 }

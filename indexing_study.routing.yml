@@ -1,13 +1,13 @@
 indexing_study.study:
-  path: '/study/{node}'
+  path: '/study/{study_node}'
   defaults:
     _controller: '\Drupal\indexing_study\Controller\IndexingStudyController::study'
     _title: 'Study Summary'
   requirements:
-    _permission: 'administer content'
+    _custom_access: '\Drupal\indexing_study\Controller\IndexingStudyController::access'
   options:
     parameters:
-      node:
+      study_node:
         type: entity:node
 indexing_study.assign:
   path: '/study/{study_node}/assign'
@@ -19,14 +19,26 @@ indexing_study.assign:
       study_node:
         type: entity:node
   requirements:
-    _permission: 'administer content'
+    _custom_access: '\Drupal\indexing_study\Controller\IndexingStudyController::access'
 indexing_study.analyze:
   path: '/study/{study_node}/analyze'
   defaults:
     _controller: '\Drupal\indexing_study\Controller\IndexingStudyController::analyze'
     _title: 'Analyze subjects'
   requirements:
-    _permission: 'administer content'
+    _custom_access: '\Drupal\indexing_study\Controller\IndexingStudyController::access'
+  options:
+    parameters:
+      study_node:
+        type: entity:node
+    no-cache: 'TRUE'
+indexing_study.consensus:
+  path: '/study/{study_node}/consensus'
+  defaults:
+    _controller: '\Drupal\indexing_study\Controller\IndexingStudyController::consensus'
+    _title: 'Create Consensus'
+  requirements:
+    _custom_access: '\Drupal\indexing_study\Controller\IndexingStudyController::access'
   options:
     parameters:
       study_node:
