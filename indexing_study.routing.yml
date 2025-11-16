@@ -14,12 +14,12 @@ indexing_study.assign:
   defaults:
     _form: '\Drupal\indexing_study\Form\IndexingStudyAssignmentForm'
     _title: 'Create assignments for this Study'
+  requirements:
+    _custom_access: '\Drupal\indexing_study\Controller\IndexingStudyController::access'
   options:
     parameters:
       study_node:
         type: entity:node
-  requirements:
-    _custom_access: '\Drupal\indexing_study\Controller\IndexingStudyController::access'
 indexing_study.analyze:
   path: '/study/{study_node}/analyze'
   defaults:
@@ -37,6 +37,18 @@ indexing_study.consensus:
   defaults:
     _controller: '\Drupal\indexing_study\Controller\IndexingStudyController::consensus'
     _title: 'Create Consensus'
+  requirements:
+    _custom_access: '\Drupal\indexing_study\Controller\IndexingStudyController::access'
+  options:
+    parameters:
+      study_node:
+        type: entity:node
+    no-cache: 'TRUE'
+indexing_study.agreement:
+  path: '/study/{study_node}/agreement'
+  defaults:
+    _controller: '\Drupal\indexing_study\Controller\IndexingStudyController::agreement'
+    _title: 'Create Agreement'
   requirements:
     _custom_access: '\Drupal\indexing_study\Controller\IndexingStudyController::access'
   options:

@@ -3,10 +3,10 @@
 namespace Drupal\indexing_study;
 
 use Drupal\Core\Entity\EntityStorageException;
+use Drupal\indexing_study\Entity\AisStudyInterface;
 use Drupal\node\Entity\Node;
 use Drupal\node\NodeInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\user\Entity\User;
 use Drupal\user\UserInterface;
 use Psr\Log\LoggerInterface;
 
@@ -28,13 +28,13 @@ class IndexingStudyUtils
   const STUDY_REVIEWERS_FIELD = 'field_ais_participants';
   // The field on a document that points to the study.
   const DOCUMENT_STUDY_FIELD = 'field_ais_study';
-  // Store the field on assignment that points to user.
+  // The field on assignment that points to user.
   const ASSIGNMENT_USER_FIELD = 'field_ais_reviewer';
-  // Store the field on assignment that points to a citation item.
+  // The field on assignment that points to a citation item.
   const ASSIGNMENT_DOCUMENT_FIELD = 'field_ais_document';
-  // Store the field on a subject analysis that points to an assignment
+  // The field on a subject analysis that points to an assignment
   const SUBJECT_ANALYSIS_ASSIGNMENT_FIELD = 'field_ais_assignment';
-  // Store the field on a subject analysis that points to a document
+  // The field on a subject analysis that points to a document
   const SUBJECT_ANALYSIS_DOCUMENT_FIELD = 'field_ais_document';
   // The field on a Consensus that points to the document.
   const CONSENSUS_DOCUMENT_FIELD = 'field_ais_document';
@@ -182,35 +182,6 @@ class IndexingStudyUtils
     return $document_ids;
   }
 
-  public function getAssignmentIdsForAnalysis(NodeInterface $study_node) {
-    // Get completed assignments from existing subject analyses
-    $analyses = \Drupal::entityQuery('node')
-      ->condition('type', self::SUBJECT_ANALYSIS_BUNDLE)
-      ->accessCheck(TRUE)
-      ->execute();
-    $completed_assignments = [];
-    foreach ($analyses as $analysis_id) {
-      $analysis_node = \Drupal::entityTypeManager()->getStorage('node')->load($analysis_id);
-      $related_assignment = $analysis_node->get(self::SUBJECT_ANALYSIS_ASSIGNMENT_FIELD)->getValue()[0]['target_id'];
-      if ($related_assignment) {
-        if (!(in_array($related_assignment, $completed_assignments))) {
-          $completed_assignments[] = $related_assignment;
-        }
-      }
-    }
-
-    // Get current user
-    $current_user = \Drupal::currentUser()->id();
-
-    // Get assignments for that user with that study, that aren't completed
-    $assignment_query = \Drupal::entityQuery('node')
-      ->condition('type', 'ais_assignment')
-      ->condition('field_ais_document.entity:node.field_ais_study', $study_node->id())
-      ->condition('field_ais_reviewer', $current_user)
-      ->condition('nid', $completed_assignments, 'NOT IN')
-      ->accessCheck(TRUE);
-    return $assignment_query->execute();
-  }
 
   public function getDocumentsAwaitingConsensus(NodeInterface $study_node) {
     if ($study_node->bundle() != self::STUDY_BUNDLE) {
@@ -230,6 +201,28 @@ class IndexingStudyUtils
     $subquery->join('node', 'con', 'con.nid = fadc.entity_id');
     $subquery->addField('fadc', 'field_ais_document_target_id', 'document_id');
     $subquery->condition('con.type', self::CONSENSUS_BUNDLE, '=');
+    $query->condition('doc.nid', $subquery, 'NOT IN');
+    $results = $query->execute()->fetchAll();
+    return array_column($results, 'document_id');
+
+  }
+
+  public function getDocumentsAwaitingAgreement(NodeInterface $study_node) {
+    if ($study_node->bundle() != self::STUDY_BUNDLE) {
+      return '0';
+    }
+    $database = \Drupal::database();
+    $query = $database->select('node', 'doc');
+    $query->addField('doc', 'nid', 'document_id');
+    $query->join('node__field_ais_document', 'fadcon', 'doc.nid = fadcon.field_ais_document_target_id');
+    $query->innerJoin('node', 'con', 'con.nid = fadcon.entity_id AND con.type = :contype', [':contype' => self::CONSENSUS_BUNDLE]);
+    $query->join('node__field_ais_study', 'study_field', 'study_field.entity_id = doc.nid AND study_field.field_ais_study_target_id = :study_id', [':study_id' => $study_node->id()]);
+    $query->condition('doc.type', self::DOCUMENT_BUNDLE, '=' );
+    $query->groupBy('doc.nid');
+    $subquery = $database->select('node__field_ais_document','fadag');
+    $subquery->join('node', 'ag', 'ag.nid = fadag.entity_id');
+    $subquery->addField('fadag', 'field_ais_document_target_id', 'document_id');
+    $subquery->condition('ag.type', self::AGREEMENT_BUNDLE, '=');
     $query->condition('doc.nid', $subquery, 'NOT IN');
     $results = $query->execute()->fetchAll();
     return array_column($results, 'document_id');
@@ -257,13 +250,19 @@ class IndexingStudyUtils
     }
     return $return_array;
   }
-  public function getConsensusForDocumentId($documentId) {
-    $analysis_ids = $this->entityTypeManager->getStorage('node')->getQuery()
+  public function getConsensusForDocumentId($documentId, $load=False) {
+    $consensus_ids = $this->entityTypeManager->getStorage('node')->getQuery()
       ->accessCheck(TRUE)
       ->condition('status', 1)
       ->condition('type', self::CONSENSUS_BUNDLE)
       ->condition(self::CONSENSUS_DOCUMENT_FIELD, $documentId)
       ->execute();
-    return $this->entityTypeManager->getStorage('node')->loadMultiple($analysis_ids);
+    if ($load) {
+      return $this->entityTypeManager->getStorage('node')->loadMultiple($consensus_ids);
+    }
+    else {
+      return $this->intify_array($consensus_ids);
+    }
   }
+
 }

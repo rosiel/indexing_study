@@ -1,0 +1,22 @@
+langcode: 'en'
+study:
+  bundle: 'ais_study'
+  reviewers_field: 'field_ais_participants'
+document:
+  bundle: 'ais_document'
+  study_field: 'field_ais_study'
+assignment:
+  bundle: 'ais_assignment'
+  user_field: 'field_ais_reviewer'
+  document_field: 'field_ais_document'
+subject_analysis:
+  bundle: 'ais_subject_analysis'
+  assignment_field: 'field_ais_assignment'
+  document_field: 'field_ais_document'
+consensus:
+  bundle: 'ais_consensus'
+  subject_analysis_field: 'field_ais_analyses'
+  document_field: 'field_ais_document'
+agreement:
+  bundle: 'ais_agreement'
+  document_field: 'field_ais_document'

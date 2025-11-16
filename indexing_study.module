@@ -2,6 +2,9 @@
 use Drupal\indexing_study\Entity\AisStudy;
 use Drupal\indexing_study\Entity\AisDocument;
 
+/**
+ * Implements hook_entity_bundle_info_alter().
+ */
 function indexing_study_entity_bundle_info_alter(array &$bundles): void {
   if (isset($bundles['node']['ais_study'])) {
     $bundles['node']['ais_study']['class'] = AisStudy::class;
@@ -11,3 +14,27 @@ function indexing_study_entity_bundle_info_alter(array &$bundles): void {
   }
 }
 
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function indexing_study_form_node_ais_subject_analysis_form_alter(&$form, $form_state, $form_id)  {
+
+  # Don't display the meta or revision information.
+  $form['meta']['author']['#access'] = False;
+  $form['meta']['changed']['#access'] = False;
+  $form['revision_information']['#access'] = False;
+  # Move subjects to the right-hand sidebar.
+  $form['field_ais_subjects']['#group'] = 'advanced';
+  $form['field_ais_subjects']['#weight'] = 3;
+  # Move submit to the right-hand sidebar.
+  $form['sidebar_submit'] = [
+    '#type' => 'container',
+    '#access' => True,
+    '#group' => 'advanced',
+    '#weight' => 5,
+  ];
+  $form['sidebar_submit']['actions'] = $form['actions'];
+  unset($form['actions']);
+  # Attach library
+  $form['#attached']['library'][] = 'indexing_study/indexing_study';
+}

@@ -6,3 +6,7 @@
 .ais-subjects-left {}
 .ais_subjects-right {}
 
+.node-ais-subject-analysis-form .layout-form {
+  grid-template-columns: minmax(0,3fr) minmax(33rem,1fr);
+}
+

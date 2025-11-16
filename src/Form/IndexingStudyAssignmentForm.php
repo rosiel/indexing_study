@@ -4,7 +4,6 @@ namespace Drupal\indexing_study\Form;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Link;
 use Drupal\Core\Messenger\MessengerTrait;
 use Drupal\node\NodeInterface;
 use Drupal\indexing_study\IndexingStudyUtils;
@@ -56,9 +55,7 @@ class IndexingStudyAssignmentForm extends FormBase {
 
     $study_title = $study_node->getTitle();
     $reviewers_per_document_value = $study_node->field_ais_reveiwers_per_document->value ?? 5;
-    $documents_to_assign = (int)$study_node->getDocCountInStudyAwaitingAssignment();
-
-    // TODO: Get summary of assignments needed.
+    $documents_to_assign = (int)$study_node->getDocCountAwaitingAssignment();
 
     $form['study'] = [
       '#type' => 'value',
@@ -106,7 +103,7 @@ class IndexingStudyAssignmentForm extends FormBase {
    * {@inheritdoc }
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
-    // Error if study can't be loaded. TODO: test for bundle.
+    // Error if study can't be loaded.
     if ((! $form_state->getValue('study') instanceof NodeInterface) or ($form_state->getValue('study')->bundle() != IndexingStudyUtils::STUDY_BUNDLE) ) {
       $form_state->setErrorByName('study', $this->t('Study cannot be loaded.'));
     }
@@ -140,5 +137,6 @@ class IndexingStudyAssignmentForm extends FormBase {
     if (!$assignments_created) {
       $this->messenger()->addError($this->t('An error occurred. Check the logs for details.'));
     }
+    $form_state->setRedirect('indexing_study.study', ['study_node' => $study->id() ]);
   }
 }
