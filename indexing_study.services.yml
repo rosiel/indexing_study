@@ -1,8 +1,12 @@
 services:
   indexing_study.utils:
     class: Drupal\indexing_study\IndexingStudyUtils
-    arguments: [ '@entity_type.manager', '@logger.channel.indexing_study' ]
+    arguments: [ '@entity_type.manager', '@logger.channel.indexing_study']
   logger.channel.indexing_study:
     parent: logger.channel_base
     arguments: ['indexing_study']
-
+  indexing_study.breadcrumbs:
+    class: Drupal\indexing_study\IndexingStudyBreadcrumbBuilder
+    arguments: [ '@entity_type.manager', '@request_stack', '@config.factory']
+    tags:
+      - { name: breadcrumb_builder, priority: 100 }

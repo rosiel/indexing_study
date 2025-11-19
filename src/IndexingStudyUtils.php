@@ -75,14 +75,12 @@ class IndexingStudyUtils
       return $u->id();
     }, $reviewers);
 
-    $documentIds = $this->getDocumentIdsInStudy($study);
+    $documentIds = $study->getDocIdsAwaitingAssignment();
     foreach ($documentIds as $documentId) {
-      $assignments = $this->getAssignmentsForDocumentId($documentId);
+      $document = $this->entityTypeManager->getStorage('node')->load($documentId);
 
-      while (count($assignments) < $reviewers_per_document) {
-        $existing_reviewers = array_map(function ($a) {
-          return $a->get(self::ASSIGNMENT_USER_FIELD)->getValue()[0]['target_id'];
-        }, $assignments);
+      while ($document->needsAssignment()) {
+        $existing_reviewers = $document->getAssignedUserIds();
         $eligible_reviewers = array_diff($all_reviewer_ids, $existing_reviewers);
         if (count($eligible_reviewers) < 1) {
           $this->logger->error("No reviewer could be assigned for document {$documentId}.");
@@ -95,13 +93,12 @@ class IndexingStudyUtils
           $this->logger->error("Assignments could not be completed for document {$documentId}.");
           return NULL;
         }
-        $assignments = $this->getAssignmentsForDocumentId($documentId);
       }
     }
     return True;
   }
 
-  public function getAssignmentsForDocumentId($documentId) {
+  public function getValidAssignmentsForDocumentId($documentId) {
     $assignment_ids = $this->entityTypeManager->getStorage('node')->getQuery()
       ->accessCheck(TRUE)
       ->condition('status', 1)

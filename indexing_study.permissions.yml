@@ -1,0 +1,15 @@
+add documents:
+  title: 'Add documents'
+  description: 'Import documents into a study. Must also have the permission to create the Document content type.'
+assign documents:
+  title: 'Assign documents'
+  description: 'Create assignments. Must also have the permission to create the Assignment content type.'
+analyze documents:
+  title: 'Analyze documents'
+  description: 'Create Subject Analyses. Must also have the permission to create the Subject Analysis content type.'
+create consensus:
+  title: 'Create consensus'
+  description: 'Create consensus among analyses. Must also have the permission to create Consensus content type.'
+create agreement:
+  title: 'Create agreement'
+  description: 'Create agreement between consensus and assigned terms. Must also have the permission to create the Agreement content type.'

@@ -15,6 +15,7 @@ indexing_study.assign:
     _form: '\Drupal\indexing_study\Form\IndexingStudyAssignmentForm'
     _title: 'Create assignments for this Study'
   requirements:
+    _permission: 'assign documents'
     _custom_access: '\Drupal\indexing_study\Controller\IndexingStudyController::access'
   options:
     parameters:
@@ -26,6 +27,7 @@ indexing_study.analyze:
     _controller: '\Drupal\indexing_study\Controller\IndexingStudyController::analyze'
     _title: 'Analyze subjects'
   requirements:
+    _permission: 'analyze documents'
     _custom_access: '\Drupal\indexing_study\Controller\IndexingStudyController::access'
   options:
     parameters:
@@ -38,6 +40,7 @@ indexing_study.consensus:
     _controller: '\Drupal\indexing_study\Controller\IndexingStudyController::consensus'
     _title: 'Create Consensus'
   requirements:
+    _permission: 'create consensus'
     _custom_access: '\Drupal\indexing_study\Controller\IndexingStudyController::access'
   options:
     parameters:
@@ -50,6 +53,7 @@ indexing_study.agreement:
     _controller: '\Drupal\indexing_study\Controller\IndexingStudyController::agreement'
     _title: 'Create Agreement'
   requirements:
+    _permission: 'create agreement'
     _custom_access: '\Drupal\indexing_study\Controller\IndexingStudyController::access'
   options:
     parameters:

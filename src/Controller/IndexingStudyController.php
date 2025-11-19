@@ -3,6 +3,7 @@
 namespace Drupal\indexing_study\Controller;
 
 use Drupal\Component\Serialization\Yaml;
+use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Url;
 use Drupal\indexing_study\Entity\AisStudyInterface;
@@ -24,6 +25,7 @@ class IndexingStudyController extends ControllerBase {
    */
   protected $utils;
 
+
   /**
    * IndexingStudyController constructor.
    *
@@ -32,6 +34,7 @@ class IndexingStudyController extends ControllerBase {
    */
   public function __construct(IndexingStudyUtils $utils) {
     $this->utils = $utils;
+
   }
 
   /**
@@ -44,7 +47,7 @@ class IndexingStudyController extends ControllerBase {
    */
   public static function create(\Symfony\Component\DependencyInjection\ContainerInterface $container) {
     return new static (
-      $container->get('indexing_study.utils')
+      $container->get('indexing_study.utils'),
     );
   }
 
@@ -52,10 +55,11 @@ class IndexingStudyController extends ControllerBase {
    * Access callback
    */
   public function access(AccountInterface $account, AisStudyInterface $study_node) {
-    if ($study_node->bundle() != $this->utils::STUDY_BUNDLE) {
+    $is_config = $this->config('indexing_study.settings');
+    if ($study_node->bundle() != $is_config->get('study.bundle')) {
       return AccessResult::forbidden();
     }
-    $users_in_study = array_column($study_node->get($this->utils::STUDY_REVIEWERS_FIELD)->getValue(), 'target_id');
+    $users_in_study = array_column($study_node->get($is_config->get('study.reviewers_field'))->getValue(), 'target_id');
     if (in_array($account->id(), $users_in_study)) {
           return AccessResult::allowed();
     }
@@ -64,6 +68,7 @@ class IndexingStudyController extends ControllerBase {
     }
     return AccessResult::forbidden();
   }
+
 
   /**
    * Returns the Study Summary page.
@@ -82,6 +87,11 @@ class IndexingStudyController extends ControllerBase {
       ->view($study_node, 'teaser');
 
     // Build the documents section.
+    $add_documents_url = Url::fromRoute('entity.feeds_feed.add_form', [
+      'feeds_feed_type' => 'ais_document_import',
+      'study' => $study_node->id(),
+      'destination' => Url::fromRoute('indexing_study.study', ['study_node' => $study_node->id()])->toString()
+    ]);
     $build['documents'] = [
       '#type' => 'details',
       '#title' => $this->t("Documents (@count in study)", [
@@ -90,14 +100,11 @@ class IndexingStudyController extends ControllerBase {
       'ingest' => [
         '#type' => 'link',
         '#title' => $this->t('Import'),
-        '#url' => Url::fromRoute('entity.feeds_feed.add_form', [
-          'feeds_feed_type' => 'ais_document_import',
-          'study' => $study_node->id(),
-          'destination' => Url::fromRoute('indexing_study.study', ['study_node' => $study_node->id()])->toString()
-        ]),
+        '#url' => $add_documents_url,
         '#attributes' => [
           'class' => ['button', 'button--primary'],
         ],
+        '#access' => $add_documents_url->access(),
       ],
     ];
     $manage_documents_url = Url::fromRoute('view.is_documents.page_1', ['field_ais_study_target_id' => $study_node->id()]);
@@ -110,6 +117,8 @@ class IndexingStudyController extends ControllerBase {
 
     // Build the assignment section.
     $needs_assignment = $study_node->getDocCountAwaitingAssignment();
+    $assignment_url = Url::fromRoute('indexing_study.assign', ['study_node' => $study_node->id()]);
+    $manage_assignments_url = Url::fromRoute('view.is_assignments.page_1', ['field_ais_study_target_id' => $study_node->id()]);
     $build['assignments'] = [
       '#type' => 'details',
       '#title' => $this->t("Assignments (@count awaiting assignment)", [
@@ -117,31 +126,23 @@ class IndexingStudyController extends ControllerBase {
       ]),
     ];
     if ($needs_assignment > 0) {
-      $build['assignments']['assign'] = [
-        '#type' => 'link',
-        '#title' => $this->t('Assign'),
-        '#url' => Url::fromRoute('indexing_study.assign', ['study_node' => $study_node->id()]),
-        '#attributes' => [
-          'class' => ['button', 'button--primary'],
-        ],
-      ];
+      if ($assignment_url->access()) {
+        $build['assignments']['assign'] = [
+          '#type' => 'link',
+          '#title' => $this->t('Assign'),
+          '#url' => $assignment_url,
+          '#attributes' => [
+            'class' => ['button', 'button--primary'],
+          ],
+        ];
+      }
+      else {
+        $build['assignments']['assign'] = $this->disabledButton($this->t('Assign'), $this->t('You do not have permission to assign documents.'));
+      }
     }
     else {
-      $build['assignments']['assign'] = [
-        '#type'=> 'container',
-        '#attributes' => [
-          'class' => ['button', 'button-primary', 'is-disabled'],
-          'role' => 'button',
-          'aria-disabled' => 'true',
-          'title' => $this->t('There are no documents to assign.')
-        ],
-        'content' => [
-          '#markup' => $this->t('Assign')
-        ]
-      ];
-
+      $build['assignments']['assign'] = $this->disabledButton($this->t('Assign'), $this->t('There are no documents to assign.'));
     }
-    $manage_assignments_url = Url::fromRoute('view.is_assignments.page_1', ['field_ais_study_target_id' => $study_node->id()]);
     $build['assignments']['manage'] = [
       '#type' => 'link',
       '#title' => $this->t('Manage assignments'),
@@ -151,6 +152,8 @@ class IndexingStudyController extends ControllerBase {
 
     // Build section for analysis.
     $needs_analysis = $study_node->getAssignmentCountForAnalysis();
+    $analysis_url = Url::fromRoute('indexing_study.analyze', ['study_node' => $study_node->id()]);
+    $manage_analyses_url = Url::fromRoute('view.is_reviews.page_1', ['field_ais_study_target_id' => $study_node->id()]);
     $build['analysis'] = [
       '#type' => 'details',
       '#title' => $this->t("Analysis (@count awaiting your subject analysis)", [
@@ -158,30 +161,40 @@ class IndexingStudyController extends ControllerBase {
       ]),
     ];
     if ($needs_analysis > 0) {
-      $build['analysis']['analyze'] = [
-        '#type' => 'link',
-        '#title' => $this->t('Analyze'),
-        '#url' => Url::fromRoute('indexing_study.analyze', ['study_node' => $study_node->id()]),
-        '#attributes' => [
-          'class' => ['button', 'button--primary'],
-        ],
-      ];
+      if ($analysis_url->access()) {
+        $build['analysis']['analyze'] = [
+          '#type' => 'link',
+          '#title' => $this->t('Analyze'),
+          '#url' => $analysis_url,
+          '#attributes' => [
+            'class' => ['button', 'button--primary'],
+          ],
+        ];
+      }
+      else {
+        $build['analysis']['analyze'] = $this->disabledButton($this->t('Analyze'), $this->t('You do not have permission to analyze documents.'));
+      }
+
     }
     else {
-      $build['analysis']['analyze'] = [
-        '#type'=> 'container',
-        '#attributes' => [
-          'class' => ['button', 'button-primary', 'is-disabled'],
-          'role' => 'button',
-          'aria-disabled' => 'true',
-          'title' => $this->t('There are no documents to assign.')
-        ],
-        'content' => [
-          '#markup' => $this->t('Analyze')
-        ]
-      ];
+      $build['analysis']['analyze'] = $this->disabledButton($this->t('Analyze'), $this->t('There are no documents to analyze.'));
+
     }
-    $manage_analyses_url = Url::fromRoute('view.is_reviews.page_1', ['field_ais_study_target_id' => $study_node->id()]);
+    $build['analysis']['progress'] = [
+      '#type' => 'container',
+      '#markup' => $this->t('Study progress')
+    ];
+    $build['analysis']['progress']['display'] = [
+      '#type' => 'table',
+      '#headers' => ['count','label'],
+      '#rows' => [
+        [$study_node->getDocCountWith0Analyses(), $this->t('Documents with 0 analyses')],
+        [$study_node->getDocCountWith1Analysis(), $this->t('Documents with 1 analysis')],
+        [$study_node->getDocCountWith2Analyses(), $this->t('Documents with 2 analyses')],
+        [$study_node->getDocCountWithOver2Analyses(), $this->t('Documents with over 2 analyses')],
+
+      ],
+    ];
     $build['analysis']['manage'] = [
       '#type' => 'link',
       '#title' => $this->t('Manage analyses'),
@@ -189,7 +202,11 @@ class IndexingStudyController extends ControllerBase {
       '#access' => $manage_analyses_url->access()
     ];
 
+    // Build consensus section.
     $needs_consensus = count($this->utils->getDocumentsAwaitingConsensus($study_node));
+    $consensus_url = Url::fromRoute('indexing_study.consensus', ['study_node' => $study_node->id()]);
+    $manage_consensus_url = Url::fromRoute('view.is_consensus.page_1', ['field_ais_study_target_id' => $study_node->id()]);
+
     $build['consensus'] = [
       '#type' => 'details',
       '#title' => $this->t("Consensus (@count awaiting consensus)", [
@@ -197,30 +214,23 @@ class IndexingStudyController extends ControllerBase {
       ]),
     ];
     if ($needs_consensus > 0) {
-      $build['consensus']['consensus'] = [
-        '#type' => 'link',
-        '#title' => $this->t('Create Consensus'),
-        '#url' => Url::fromRoute('indexing_study.consensus', ['study_node' => $study_node->id()]),
-        '#attributes' => [
-          'class' => ['button', 'button--primary'],
-        ],
-      ];
+      if ($consensus_url->access()) {
+        $build['consensus']['consensus'] = [
+          '#type' => 'link',
+          '#title' => $this->t('Create Consensus'),
+          '#url' => $consensus_url,
+          '#attributes' => [
+            'class' => ['button', 'button--primary'],
+          ],
+        ];
+      }
+      else {
+        $build['consensus']['consensus'] = $this->disabledButton($this->t('Create Consensus'), $this->t('You do not have permission to create consensus.'));
+      }
     }
     else {
-      $build['consensus']['consensus'] = [
-        '#type'=> 'container',
-        '#attributes' => [
-          'class' => ['button', 'button-primary', 'is-disabled'],
-          'role' => 'button',
-          'aria-disabled' => 'true',
-          'title' => $this->t('There are no documents awaiting consensus.')
-        ],
-        'content' => [
-          '#markup' => $this->t('Create Consensus')
-        ]
-      ];
+      $build['consensus']['consensus'] = $this->disabledButton($this->t('Create Consensus'), $this->t('There are no documents awaiting consensus.'));
     }
-    $manage_consensus_url = Url::fromRoute('view.is_consensus.page_1', ['field_ais_study_target_id' => $study_node->id()]);
     $build['consensus']['manage'] = [
       '#type' => 'link',
       '#title' => $this->t('Manage consensus'),
@@ -228,7 +238,10 @@ class IndexingStudyController extends ControllerBase {
       '#access' => $manage_consensus_url->access()
     ];
 
+    // Build agreement section.
     $needs_agreement = count($this->utils->getDocumentsAwaitingAgreement($study_node));
+    $agreement_url = Url::fromRoute('indexing_study.agreement', ['study_node' => $study_node->id()]);
+    $manage_agreement_url = Url::fromRoute('view.is_agreements.page_1', ['field_ais_study_target_id' => $study_node->id()]);
     $build['agreement'] = [
       '#type' => 'details',
       '#title' => $this->t("Agreement (@count awaiting agreement)", [
@@ -236,30 +249,23 @@ class IndexingStudyController extends ControllerBase {
       ]),
     ];
     if ($needs_agreement > 0) {
-      $build['agreement']['agreement'] = [
-        '#type' => 'link',
-        '#title' => $this->t('Create Agreement'),
-        '#url' => Url::fromRoute('indexing_study.agreement', ['study_node' => $study_node->id()]),
-        '#attributes' => [
-          'class' => ['button', 'button--primary'],
-        ],
-      ];
+      if ($agreement_url->access()) {
+        $build['agreement']['agreement'] = [
+          '#type' => 'link',
+          '#title' => $this->t('Create Agreement'),
+          '#url' => $agreement_url,
+          '#attributes' => [
+            'class' => ['button', 'button--primary'],
+          ],
+        ];
+      }
+      else {
+        $build['agreement']['agreement'] = $this->disabledButton($this->t('Create Agreement'), $this->t('You do not have permission to create agreement.'));
+      }
     }
     else {
-      $build['agreement']['agreement'] = [
-        '#type'=> 'container',
-        '#attributes' => [
-          'class' => ['button', 'button-primary', 'is-disabled'],
-          'role' => 'button',
-          'aria-disabled' => 'true',
-          'title' => $this->t('There are no documents awaiting agreement.')
-        ],
-        'content' => [
-          '#markup' => $this->t('Create Agreement')
-        ]
-      ];
+      $build['agreement']['agreement'] = $this->disabledButton($this->t('Create Agreement'), $this->t('There are no documents awaiting agreement.'));
     }
-    $manage_agreement_url = Url::fromRoute('view.is_agreements.page_1', ['field_ais_study_target_id' => $study_node->id()]);
     $build['agreement']['manage'] = [
       '#type' => 'link',
       '#title' => $this->t('Manage agreements'),
@@ -267,7 +273,9 @@ class IndexingStudyController extends ControllerBase {
       '#access' => $manage_agreement_url->access(),
     ];
 
+    // Build results section.
     $result_count = $study_node->getDocCountCompleted();
+    $results_url = Url::fromRoute('view.is_results.page_1', ['node' => $study_node->id()]);
     $build['results'] = [
       '#type' => 'details',
       '#open' => True,
@@ -276,28 +284,22 @@ class IndexingStudyController extends ControllerBase {
       ]),
     ];
     if ($result_count > 0) {
-      $build['results']['view'] = [
-        '#type' => 'link',
-        '#title' => $this->t('View Results'),
-        '#url' => Url::fromRoute('view.is_results.page_1', ['node' => $study_node->id()]),
-        '#attributes' => [
-          'class' => ['button', 'button--primary'],
-        ],
-      ];
+      if ($results_url->access()) {
+        $build['results']['view'] = [
+          '#type' => 'link',
+          '#title' => $this->t('View Results'),
+          '#url' => $results_url,
+          '#attributes' => [
+            'class' => ['button', 'button--primary'],
+          ],
+        ];
+      }
+      else {
+        $build['results']['view'] = $this->disabledButton($this->t('View Results'), $this->t('You do not have permission to view results.'));
+      }
     }
     else {
-      $build['results']['view'] = [
-        '#type'=> 'container',
-        '#attributes' => [
-          'class' => ['button', 'button-primary', 'is-disabled'],
-          'role' => 'button',
-          'aria-disabled' => 'true',
-          'title' => $this->t('There are no results to view.')
-        ],
-        'content' => [
-          '#markup' => $this->t('View Results')
-        ]
-      ];
+      $build['results']['view'] = $this->disabledButton($this->t('View Results'), $this->t('There are no results to view.'));
     }
     $download_results_url = Url::fromRoute('view.is_results.data_export_1', ['node' => $study_node->id()]);
     $build['results']['download'] = [
@@ -308,6 +310,21 @@ class IndexingStudyController extends ControllerBase {
     ];
     $build['#cache'] = ['max-age' => 0];
     return $build;
+  }
+
+  protected function disabledButton( $label,  $title) {
+    return [
+      '#type'=> 'container',
+      '#attributes' => [
+        'class' => ['button', 'button-primary', 'is-disabled'],
+        'role' => 'button',
+        'aria-disabled' => 'true',
+        'title' => $title
+      ],
+      'content' => [
+        '#markup' => $label
+      ]
+    ];
   }
 
   /**

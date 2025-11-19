@@ -1,6 +1,7 @@
 <?php
 namespace Drupal\indexing_study\Entity;
 
+use Drupal\Core\Config\ImmutableConfig;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\indexing_study\IndexingStudyUtils;
 use Drupal\migrate\Plugin\migrate\process\ArrayBuild;
@@ -9,12 +10,13 @@ use Psr\Log\LoggerInterface;
 
 class AisStudy extends Node implements  AisStudyInterface {
 
+
   /**
    * The Indexing Study Config.
    *
    * @var \Drupal\Core\Config\ImmutableConfig $config
    */
-  protected $config;
+  protected ImmutableConfig $config;
 
   private function getConfig() {
     if (!isset($this->config)) {
@@ -47,6 +49,37 @@ class AisStudy extends Node implements  AisStudyInterface {
     return count($this->getDocIdsFullyAssigned());
   }
 
+  // Todo: put the analysis stuff here.
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getDocCountWith0Analyses(): int {
+    return count($this->getDocIdsWith0Analyses());
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getDocCountWith1Analysis(): int {
+    return count($this->getDocIdsWith1Analysis());
+  }
+  /**
+   * {@inheritdoc}
+   */
+  public function getDocCountWith2Analyses(): int {
+    return count($this->getDocIdsWith2Analyses());
+  }
+  /**
+   * {@inheritdoc}
+   */
+  public function getDocCountWithOver2Analyses(): int {
+    return count($this->getDocIdsWithOver2Analyses());
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getAssignmentCountForAnalysis(): int {
     return count($this->getAssignmentIdsForAnalysis());
   }
@@ -85,6 +118,7 @@ class AisStudy extends Node implements  AisStudyInterface {
       ->condition('type', $config->get('assignment.bundle'))
       ->condition($config->get('assignment.document_field') . '.entity:node.' . $config->get('document.study_field'), $this->id())
       ->condition($config->get('assignment.user_field'), $current_user)
+      ->condition('status', 1)
       ->accessCheck(TRUE);
     if (count($completed_assignments) > 0) {
       $assignment_query->condition('nid', $completed_assignments, 'NOT IN');
@@ -117,7 +151,7 @@ class AisStudy extends Node implements  AisStudyInterface {
       ->execute();
   }
 
-  public function getDocIdsAwaitingAssignment() {
+  protected function getDocIdsRejected() {
     $config = $this->getConfig();
     // Assignment.document field shorthand
     $adf = $config->get('assignment.document_field');
@@ -127,19 +161,29 @@ class AisStudy extends Node implements  AisStudyInterface {
     $query = $database->select('node','doc');
     $query->addField('doc','nid','document_id');
     $query->addExpression('COUNT(ass.nid)', 'assignment_count');
-    $query->leftJoin('node__' . $adf, 'ad', 'doc.nid = ad.' . $adf . '_target_id');
-    $query->leftJoin('node', 'ass', 'ass.nid=ad.entity_id AND ass.type = :asstype',
+    $query->Join('node__' . $adf, 'ad', 'doc.nid = ad.' . $adf . '_target_id');
+    $query->Join('node', 'ass', 'ass.nid=ad.entity_id AND ass.type = :asstype',
       [':asstype' => $config->get('assignment.bundle')]);
     $query->join('node__' . $dsf, 'study_field', 'study_field.entity_id = doc.nid AND study_field.' . $dsf . '_target_id = :study',
       [':study' => $this->id()]);
     $query->join('node_field_data', 'nfd1', 'doc.nid = nfd1.nid and nfd1.status = 1');
-    $query->leftJoin('node_field_data', 'nfd2', 'ass.nid = nfd2.nid AND nfd2.status = 1');
+    $query->join('node_field_data', 'nfd2', 'ass.nid = nfd2.nid AND nfd2.status = 0');
     $query->condition('doc.type', $config->get('document.bundle'));
     $query->groupBy('doc.nid');
-    $query->having('assignment_count < :limit', [':limit' => 2 ]);
+    $query->having('assignment_count >= :limit', [':limit' => 2 ]);
     // add condition doc is published
     $results = $query->execute()->fetchAll();
     return array_column($results, 'document_id');
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getDocIdsAwaitingAssignment(): array {
+    $docs_rejected = $this->getDocIdsRejected();
+    $docs_fully_assigned = $this->getDocIdsFullyAssigned();
+    $docs_all = $this->getDocIdsAll();
+    return array_diff($docs_all, $docs_rejected, $docs_fully_assigned);
   }
 
   public function getDocIdsFullyAssigned() {
@@ -157,20 +201,88 @@ class AisStudy extends Node implements  AisStudyInterface {
       [':asstype' => $config->get('assignment.bundle')]);
     $query->join('node__' . $dsf, 'study_field', 'study_field.entity_id = doc.nid AND study_field.' . $dsf . '_target_id = :study',
       [':study' => $this->id()]);
-    $query->leftJoin('node_field_data', 'nfd1', 'doc.nid = nfd1.nid and nfd1.status = 1');
-    $query->leftJoin('node_field_data', 'nfd2', 'ass.nid = nfd2.nid AND nfd2.status = 1');
+    $query->join('node_field_data', 'nfd1', 'doc.nid = nfd1.nid and nfd1.status = 1');
+    $query->join('node_field_data', 'nfd2', 'ass.nid = nfd2.nid AND nfd2.status = 1');
     $query->condition('doc.type', $config->get('document.bundle'));
     $query->groupBy('doc.nid');
-    $query->having('assignment_count', 2, '>=');
-    // add condition doc is published
+    $query->having('assignment_count >= :limit', [':limit' => 2]);
     $results = $query->execute()->fetchAll();
     return array_column($results, 'document_id');
   }
 
-  public function getDocIdsRejected() {
-    // Get all documents
-    // where there exist two subject assignments that are unpublished.
-    return [];
+  /**
+   * Get doc ids with 0 subject analyses.
+   *
+   * @return array
+   */
+  public function getDocIdsWith0Analyses() {
+    return $this->getDocIdsByAnalysisCount('0');
+  }
+
+  /**
+   * Get doc ids with 1 subject analyses.
+   *
+   * @return array
+   */
+  public function getDocIdsWith1Analysis() {
+    return $this->getDocIdsByAnalysisCount('1');
+  }
+
+  /**
+   * Get doc ids with 2 subject analyses.
+   *
+   * @return array
+   */
+  public function getDocIdsWith2Analyses() {
+    return $this->getDocIdsByAnalysisCount('2');
+  }
+
+  /**
+   * Get doc ids with over 2 subject analyses.
+   *
+   * @return array
+   */
+  public function getDocIdsWithOver2Analyses() {
+    return $this->getDocIdsByAnalysisCount('>2');
+  }
+
+  public function getDocIdsByAnalysisCount($count = NULL) {
+    $config = $this->getConfig();
+    // Subject analysis document field shorthand
+    $sadf = $config->get('subject_analysis.document_field');
+    // Document study field shorthand
+    $dsf = $config->get('document.study_field');
+    $database = \Drupal::database();
+    $query = $database->select('node','doc');
+    $query->addField('doc','nid','document_id');
+    $query->addExpression('COUNT(sa.nid)', 'analysis_count');
+    $query->leftJoin('node__' . $sadf, 'sad', 'doc.nid = sad.' . $sadf . '_target_id');
+    $query->leftJoin('node', 'sa', 'sa.nid=sad.entity_id AND sa.type = :satype',
+      [':satype' => $config->get('subject_analysis.bundle')]);
+    $query->join('node__' . $dsf, 'study_field', 'study_field.entity_id = doc.nid AND study_field.' . $dsf . '_target_id = :study',
+      [':study' => $this->id()]);
+    $query->leftJoin('node_field_data', 'nfd1', 'doc.nid = nfd1.nid and nfd1.status = 1');
+    $query->leftJoin('node_field_data', 'nfd2', 'sa.nid = nfd2.nid AND nfd2.status = 1');
+    $query->condition('doc.type', $config->get('document.bundle'));
+    $query->groupBy('doc.nid');
+    switch ($count) {
+      case '0':
+        $query->having('analysis_count = 0');
+        break;
+      case '1':
+        $query->having('analysis_count = 1');
+        break;
+      case '2':
+        $query->having('analysis_count = 2');
+        break;
+      case '>2':
+        $query->having('analysis_count > 2');
+        break;
+      default:
+        $query->having('analysis_count >= 1');
+    }
+    $results = $query->execute()->fetchAll();
+    return array_column($results, 'document_id');
   }
 
   public function getDocIdsCompleted() {
@@ -181,6 +293,18 @@ class AisStudy extends Node implements  AisStudyInterface {
       ->condition('status',1)
       ->condition($config->get('agreement.document_field') . '.entity:node.' . $config->get('document.study_field'), $this->id())
       ->execute();
+  }
+
+  public function getDocCountAwaitingAnalysis(): int {
+    return 9999;
+  }
+
+  public function getDocCountAwaitingConsensus(): int {
+    return 9999;
+  }
+
+  public function getDocCountAwaitingAgreement(): int {
+    return 9999;
   }
 
 }
