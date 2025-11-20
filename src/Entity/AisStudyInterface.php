@@ -96,6 +96,7 @@ interface AisStudyInterface extends NodeInterface {
    */
   public function getDocCountAwaitingConsensus(): int;
 
+  public function getDocIdsAwaitingConsensus(): array;
   /**
    * Return the number of documents with consensus completed and no agreement.
    *
@@ -103,6 +104,8 @@ interface AisStudyInterface extends NodeInterface {
    */
 
   public function getDocCountAwaitingAgreement(): int;
+
+  public function getDocIdsAwaitingAgreement(): array;
 
 }
 

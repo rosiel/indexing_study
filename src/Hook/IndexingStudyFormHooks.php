@@ -17,6 +17,12 @@ class IndexingStudyFormHooks {
    */
   private ImmutableConfig $config;
 
+  /**
+   * Construct the indexing study form hooks.
+   *
+   * @param ConfigFactoryInterface $config_factory
+   *   The config factory.
+   */
   public function __construct(ConfigFactoryInterface $config_factory) {
     $this->config = $config_factory->get('indexing_study.settings');
   }
@@ -54,6 +60,7 @@ class IndexingStudyFormHooks {
         '#type' => 'submit',
         '#value' => t('Reject'),
         '#submit' => [[self::class, 'rejectAssignment']],
+        '#limit_validation_errors' => [[$this->config->get('subject_analysis.assignment_field')]],
         '#button_type' => 'secondary',
         '#attributes' => ['class' => ['button--danger']],
         '#weight' => 100,

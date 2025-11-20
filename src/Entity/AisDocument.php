@@ -25,12 +25,26 @@ class AisDocument extends Node implements  AisDocumentInterface {
   }
   public function getAnalyses(): array
   {
-    return \Drupal::service('indexing_study.utils')->getAnalysesForDocumentId($this->id());
+    $config = $this->getConfig();
+    $analysis_ids = $this->entityTypeManager()->getStorage('node')->getQuery()
+      ->accessCheck(TRUE)
+      ->condition('status', 1)
+      ->condition('type', $config->get('subject_analysis.bundle'))
+      ->condition($config->get('subject_analysis.document_field'), $this->id())
+      ->execute();
+    return \Drupal::service('indexing_study.utils')->intify_array($analysis_ids);
   }
 
   public function getConsensus(): array
   {
-    return \Drupal::service('indexing_study.utils')->getConsensusForDocumentId($this->id());
+    $config = $this->getConfig();
+    $consensus_ids = $this->entityTypeManager()->getStorage('node')->getQuery()
+      ->accessCheck(TRUE)
+      ->condition('status', 1)
+      ->condition('type', $config->get('consensus.bundle'))
+      ->condition($config->get('consensus.document_field'), $this->id())
+      ->execute();
+    return \Drupal::service('indexing_study.utils')->intify_array($consensus_ids);
   }
 
   /**

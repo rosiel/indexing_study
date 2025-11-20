@@ -2,12 +2,11 @@
 
 namespace Drupal\indexing_study\Controller;
 
+use Drupal;
 use Drupal\Component\Serialization\Yaml;
-use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Url;
 use Drupal\indexing_study\Entity\AisStudyInterface;
-use Drupal\indexing_study\IndexingStudyUtils;
 use Drupal\Core\Messenger\MessengerTrait;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Session\AccountInterface;
@@ -19,42 +18,10 @@ class IndexingStudyController extends ControllerBase {
   use MessengerTrait;
 
   /**
-   * The IndexingStudyUtils.
-   *
-   * @var \Drupal\indexing_study\IndexingStudyUtils
-   */
-  protected $utils;
-
-
-  /**
-   * IndexingStudyController constructor.
-   *
-   * @param \Drupal\indexing_study\IndexingStudyUtils $utils
-   *   The IndexingStudyUtils.
-   */
-  public function __construct(IndexingStudyUtils $utils) {
-    $this->utils = $utils;
-
-  }
-
-  /**
-   * {@inheritdoc}
-   *
-   * @param \Symfony\Component\DependencyInjection\ContainerInterface $container
-   *   The Drupal service container.
-   *
-   * @return static
-   */
-  public static function create(\Symfony\Component\DependencyInjection\ContainerInterface $container) {
-    return new static (
-      $container->get('indexing_study.utils'),
-    );
-  }
-
-  /**
    * Access callback
    */
-  public function access(AccountInterface $account, AisStudyInterface $study_node) {
+  public function access(AccountInterface $account, AisStudyInterface $study_node): Drupal\Core\Access\AccessResultForbidden|Drupal\Core\Access\AccessResultAllowed
+  {
     $is_config = $this->config('indexing_study.settings');
     if ($study_node->bundle() != $is_config->get('study.bundle')) {
       return AccessResult::forbidden();
@@ -72,8 +39,10 @@ class IndexingStudyController extends ControllerBase {
 
   /**
    * Returns the Study Summary page.
+   *
    */
-  public function study(AisStudyInterface $study_node) {
+  public function study(AisStudyInterface $study_node): array
+  {
     $build = [];
     $build['#title'] = $study_node->getTitle();
 
@@ -82,7 +51,7 @@ class IndexingStudyController extends ControllerBase {
       '#type' => 'details',
       '#title' => $this->t("Study details")
     ];
-    $build['study']['study_node'] = \Drupal::entityTypeManager()
+    $build['study']['study_node'] = $this->entityTypeManager()
       ->getViewBuilder('node')
       ->view($study_node, 'teaser');
 
@@ -174,11 +143,9 @@ class IndexingStudyController extends ControllerBase {
       else {
         $build['analysis']['analyze'] = $this->disabledButton($this->t('Analyze'), $this->t('You do not have permission to analyze documents.'));
       }
-
     }
     else {
       $build['analysis']['analyze'] = $this->disabledButton($this->t('Analyze'), $this->t('There are no documents to analyze.'));
-
     }
     $build['analysis']['progress'] = [
       '#type' => 'container',
@@ -203,7 +170,7 @@ class IndexingStudyController extends ControllerBase {
     ];
 
     // Build consensus section.
-    $needs_consensus = count($this->utils->getDocumentsAwaitingConsensus($study_node));
+    $needs_consensus = $study_node->getDocCountAwaitingConsensus();
     $consensus_url = Url::fromRoute('indexing_study.consensus', ['study_node' => $study_node->id()]);
     $manage_consensus_url = Url::fromRoute('view.is_consensus.page_1', ['field_ais_study_target_id' => $study_node->id()]);
 
@@ -239,7 +206,7 @@ class IndexingStudyController extends ControllerBase {
     ];
 
     // Build agreement section.
-    $needs_agreement = count($this->utils->getDocumentsAwaitingAgreement($study_node));
+    $needs_agreement = $study_node->getDocCountAwaitingAgreement();
     $agreement_url = Url::fromRoute('indexing_study.agreement', ['study_node' => $study_node->id()]);
     $manage_agreement_url = Url::fromRoute('view.is_agreements.page_1', ['field_ais_study_target_id' => $study_node->id()]);
     $build['agreement'] = [
@@ -331,15 +298,15 @@ class IndexingStudyController extends ControllerBase {
    * Returns the response page for the next assignment in a study.
    */
   public function analyze(AisStudyInterface $study_node) {
-    $config = \Drupal::config('indexing_study.settings');
+    $config = $this->config('indexing_study.settings');
     $awaiting_analysis = $study_node->getAssignmentIdsForAnalysis();
     if(count($awaiting_analysis) < 1) {
       return ['#markup' => $this->t('There are no outstanding documents needing your analysis in this study. 🥳'),
-        '#cache' => ['max-age'=>0]];
+        '#cache' => ['max-age' => 0]];
     }
     else {
       $assignment_id = $awaiting_analysis[array_rand($awaiting_analysis)];
-      $assignment = \Drupal::entityTypeManager()->getStorage('node')->load($assignment_id);
+      $assignment = $this->entityTypeManager()->getStorage('node')->load($assignment_id);
       $document_id = $assignment->get($config->get('assignment.document_field'))->getValue()[0]['target_id'];
       return $this->redirect(
         'node.add',
@@ -359,7 +326,8 @@ class IndexingStudyController extends ControllerBase {
    * Returns the response page for the next assignment in a study.
    */
   public function consensus(AisStudyInterface $study_node) {
-    $needs_consensus = $this->utils->getDocumentsAwaitingConsensus($study_node);
+    $config = $this->config('indexing_study.settings');
+    $needs_consensus = $study_node->getDocIdsAwaitingConsensus();
     if(count($needs_consensus) < 1) {
       return [
         '#markup' => $this->t('There are no outstanding documents needing consensus in this study. 🥳'),
@@ -368,11 +336,12 @@ class IndexingStudyController extends ControllerBase {
     }
     else {
       $document_id = $needs_consensus[array_rand($needs_consensus)];
-      $analyses = $this->utils->getAnalysesForDocumentId($document_id);
+      $document = $this->entityTypeManager()->getStorage('node')->load($document_id);
+      $analyses = $document->getAnalyses();
 
       return $this->redirect(
         'node.add',
-        ['node_type' => $this->utils::CONSENSUS_BUNDLE],
+        ['node_type' => $config->get('consensus.bundle')],
         [
           'query' => [
             'analyses' => Yaml::encode($analyses),
@@ -385,7 +354,8 @@ class IndexingStudyController extends ControllerBase {
   }
 
   public function agreement(AisStudyInterface $study_node) {
-    $needs_agreement = $this->utils->getDocumentsAwaitingAgreement($study_node);
+    $config = $this->config('indexing_study.settings');
+    $needs_agreement = $study_node->getDocIdsAwaitingAgreement();
     if (count($needs_agreement) < 1) {
       return [
         '#markup' => $this->t('There are no outstanding documents needing agreement in this study. 🥳'),
@@ -393,11 +363,12 @@ class IndexingStudyController extends ControllerBase {
       ];
     } else {
       $document_id = $needs_agreement[array_rand($needs_agreement)];
-      $consensus_id = $this->utils->getConsensusForDocumentId($document_id)[0];
+      $document = $this->entityTypeManager()->getStorage('node')->load($document_id);
+      $consensus_id = $document->getConsensus()[0];
 
       return $this->redirect(
         'node.add',
-        ['node_type' => $this->utils::AGREEMENT_BUNDLE],
+        ['node_type' => $config->get('agreement.bundle')],
         [
           'query' => [
             'consensus' => $consensus_id,

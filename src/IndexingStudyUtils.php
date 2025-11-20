@@ -166,100 +166,13 @@ class IndexingStudyUtils
     }
   }
 
-  /**
-   * @param \Drupal\node\NodeInterface $study
-   * @return array
-   */
-  public function getDocumentIdsInStudy(NodeInterface $study)
-  {
-    $document_ids = $this->entityTypeManager->getStorage('node')->getQuery()
-      ->accessCheck(TRUE)
-      ->condition(self::DOCUMENT_STUDY_FIELD, $study->id())
-      ->execute();
-    return $document_ids;
-  }
-
-
-  public function getDocumentsAwaitingConsensus(NodeInterface $study_node) {
-    if ($study_node->bundle() != self::STUDY_BUNDLE) {
-      return '0';
-    }
-    $database = \Drupal::database();
-    $query = $database->select('node', 'doc');
-    $query->addField('doc', 'nid', 'document_id');
-    $query->addExpression('COUNT(sa.nid)', 'subject_analysis_count');
-    $query->join('node__field_ais_document', 'fadsa', 'doc.nid = fadsa.field_ais_document_target_id');
-    $query->join('node', 'sa', 'sa.nid = fadsa.entity_id AND sa.type = :satype', [':satype' => self::SUBJECT_ANALYSIS_BUNDLE]);
-    $query->join('node__field_ais_study', 'study_field', 'study_field.entity_id = doc.nid AND study_field.field_ais_study_target_id = :study_id', [':study_id' => $study_node->id()]);
-    $query->condition('doc.type', self::DOCUMENT_BUNDLE, '=' );
-    $query->groupBy('doc.nid');
-    $query->having('subject_analysis_count >= :limit', [':limit' => 2]);
-    $subquery = $database->select('node__field_ais_document','fadc');
-    $subquery->join('node', 'con', 'con.nid = fadc.entity_id');
-    $subquery->addField('fadc', 'field_ais_document_target_id', 'document_id');
-    $subquery->condition('con.type', self::CONSENSUS_BUNDLE, '=');
-    $query->condition('doc.nid', $subquery, 'NOT IN');
-    $results = $query->execute()->fetchAll();
-    return array_column($results, 'document_id');
-
-  }
-
-  public function getDocumentsAwaitingAgreement(NodeInterface $study_node) {
-    if ($study_node->bundle() != self::STUDY_BUNDLE) {
-      return '0';
-    }
-    $database = \Drupal::database();
-    $query = $database->select('node', 'doc');
-    $query->addField('doc', 'nid', 'document_id');
-    $query->join('node__field_ais_document', 'fadcon', 'doc.nid = fadcon.field_ais_document_target_id');
-    $query->innerJoin('node', 'con', 'con.nid = fadcon.entity_id AND con.type = :contype', [':contype' => self::CONSENSUS_BUNDLE]);
-    $query->join('node__field_ais_study', 'study_field', 'study_field.entity_id = doc.nid AND study_field.field_ais_study_target_id = :study_id', [':study_id' => $study_node->id()]);
-    $query->condition('doc.type', self::DOCUMENT_BUNDLE, '=' );
-    $query->groupBy('doc.nid');
-    $subquery = $database->select('node__field_ais_document','fadag');
-    $subquery->join('node', 'ag', 'ag.nid = fadag.entity_id');
-    $subquery->addField('fadag', 'field_ais_document_target_id', 'document_id');
-    $subquery->condition('ag.type', self::AGREEMENT_BUNDLE, '=');
-    $query->condition('doc.nid', $subquery, 'NOT IN');
-    $results = $query->execute()->fetchAll();
-    return array_column($results, 'document_id');
-
-  }
-
-  public function getAnalysesForDocumentId($documentId, $load=False) {
-    $analysis_ids = $this->entityTypeManager->getStorage('node')->getQuery()
-      ->accessCheck(TRUE)
-      ->condition('status', 1)
-      ->condition('type', self::SUBJECT_ANALYSIS_BUNDLE)
-      ->condition(self::SUBJECT_ANALYSIS_DOCUMENT_FIELD, $documentId)
-      ->execute();
-    if ($load) {
-      return $this->entityTypeManager->getStorage('node')->loadMultiple($analysis_ids);
-    }
-    else {
-      return $this->intify_array($analysis_ids);
-    }
-  }
-  private function intify_array($array) {
+  public function intify_array($array) {
     $return_array = [];
     foreach ($array as $value) {
       $return_array[] = (int) $value;
     }
     return $return_array;
   }
-  public function getConsensusForDocumentId($documentId, $load=False) {
-    $consensus_ids = $this->entityTypeManager->getStorage('node')->getQuery()
-      ->accessCheck(TRUE)
-      ->condition('status', 1)
-      ->condition('type', self::CONSENSUS_BUNDLE)
-      ->condition(self::CONSENSUS_DOCUMENT_FIELD, $documentId)
-      ->execute();
-    if ($load) {
-      return $this->entityTypeManager->getStorage('node')->loadMultiple($consensus_ids);
-    }
-    else {
-      return $this->intify_array($consensus_ids);
-    }
-  }
+
 
 }

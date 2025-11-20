@@ -127,16 +127,6 @@ class AisStudy extends Node implements  AisStudyInterface {
   }
 
 
-  // START CRUFT
-
-  public function getDocCountInStudyAwaitingReview(): string {
-    return (string)$this->count_rows_in_view('indexing_study_node_views', '4_needs_review');
-  }
-  public function getDocCountInStudyAwaitingReviewByUser(): string {
-    return (string)$this->count_rows_in_view('indexing_study_node_views', '5_needs_review_by_user');
-  }
-
-  // END CRUFT
 
 
   /**
@@ -296,15 +286,74 @@ class AisStudy extends Node implements  AisStudyInterface {
   }
 
   public function getDocCountAwaitingAnalysis(): int {
+    // Get documents in this study.
+    $docs = $this->getDocIdsAll();
+
+    // Get rejected documents.
+    $rejected = $this->getDocIdsRejected();
+
+    // Get unfinished assignments.
+
     return 9999;
+  }
+
+  public function getDocIdsAwaitingConsensus(): array
+  {
+    $config = $this->getConfig();
+    $database = \Drupal::database();
+    $query = $database->select('node', 'doc');
+    $query->addField('doc', 'nid', 'document_id');
+    $query->addExpression('COUNT(sa.nid)', 'subject_analysis_count');
+    $query->join('node__field_ais_document', 'fadsa', 'doc.nid = fadsa.field_ais_document_target_id');
+    $query->join('node', 'sa', 'sa.nid = fadsa.entity_id AND sa.type = :satype', [':satype' => $config->get('subject_analysis.bundle')]);
+    $query->join('node__field_ais_study', 'study_field', 'study_field.entity_id = doc.nid AND study_field.field_ais_study_target_id = :study_id', [':study_id' => $this->id()]);
+    $query->condition('doc.type', $config->get('document.bundle'), '=' );
+    $query->groupBy('doc.nid');
+    $query->having('subject_analysis_count >= :limit', [':limit' => 2]);
+    $subquery = $database->select('node__field_ais_document','fadc');
+    $subquery->join('node', 'con', 'con.nid = fadc.entity_id');
+    $subquery->addField('fadc', 'field_ais_document_target_id', 'document_id');
+    $subquery->condition('con.type', $config->get('consensus.bundle'), '=');
+    $query->condition('doc.nid', $subquery, 'NOT IN');
+    $results = $query->execute()->fetchAll();
+    return array_column($results, 'document_id');
   }
 
   public function getDocCountAwaitingConsensus(): int {
-    return 9999;
+    return count($this->getDocIdsAwaitingConsensus());
+  }
+  public function getDocIdsAwaitingAgreement(): array {
+    $config = $this->getConfig();
+    $database = \Drupal::database();
+    $query = $database->select('node', 'doc');
+    $query->addField('doc', 'nid', 'document_id');
+    $query->join('node__field_ais_document', 'fadcon', 'doc.nid = fadcon.field_ais_document_target_id');
+    $query->innerJoin('node', 'con', 'con.nid = fadcon.entity_id AND con.type = :contype', [':contype' => $config->get('consensus.bundle')]);
+    $query->join('node__field_ais_study', 'study_field', 'study_field.entity_id = doc.nid AND study_field.field_ais_study_target_id = :study_id', [':study_id' => $this->id()]);
+    $query->condition('doc.type', $config->get('document.bundle'), '=' );
+    $query->groupBy('doc.nid');
+    $subquery = $database->select('node__field_ais_document','fadag');
+    $subquery->join('node', 'ag', 'ag.nid = fadag.entity_id');
+    $subquery->addField('fadag', 'field_ais_document_target_id', 'document_id');
+    $subquery->condition('ag.type', $config->get('agreement.bundle'), '=');
+    $query->condition('doc.nid', $subquery, 'NOT IN');
+    $results = $query->execute()->fetchAll();
+    return array_column($results, 'document_id');
+  }
+  public function getDocCountAwaitingAgreement(): int {
+    return count($this->getDocIdsAwaitingAgreement());
   }
 
-  public function getDocCountAwaitingAgreement(): int {
-    return 9999;
+
+  // START CRUFT
+
+  public function getDocCountInStudyAwaitingReview(): string {
+    return (string)$this->count_rows_in_view('indexing_study_node_views', '4_needs_review');
   }
+  public function getDocCountInStudyAwaitingReviewByUser(): string {
+    return (string)$this->count_rows_in_view('indexing_study_node_views', '5_needs_review_by_user');
+  }
+
+  // END CRUFT
 
 }
