@@ -7,3 +7,7 @@
 .node-ais-subject-analysis-form .layout-form {
   grid-template-columns: minmax(0,3fr) minmax(28rem,1fr);
 }
+
+.is-subjects .form-submit:not(.field-add-more-submit)  {
+  display: none;
+}

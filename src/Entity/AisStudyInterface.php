@@ -49,32 +49,13 @@ interface AisStudyInterface extends NodeInterface {
   public function getAssignmentIdsForAnalysis(): array;
 
   /**
-   * Return the count of documents with no subject analyses.
+   * Return the ids of documents with the specified number of analyses done.
    *
-   * @return int
+   * @param $count
+   *   The number of analyses; may be '0','1','2','>2', or NULL which defaults to '>=1'
+   * @return array
    */
-  public function getDocCountWith0Analyses(): int;
-
-  /**
-   * Return the count of documents with no subject analyses.
-   *
-   * @return int
-   */
-  public function getDocCountWith1Analysis(): int;
-
-  /**
-   * Return the count of documents with no subject analyses.
-   *
-   * @return int
-   */
-  public function getDocCountWith2Analyses(): int;
-
-  /**
-   * Return the count of documents with no subject analyses.
-   *
-   * @return int
-   */
-  public function getDocCountWithOver2Analyses(): int;
+  public function getDocIdsByAnalysisCount($count = NULL): array;
 
   /**
    * Return a list of document ids that are awaiting assignment.
@@ -82,12 +63,6 @@ interface AisStudyInterface extends NodeInterface {
    * @return array
    */
   public function getDocIdsAwaitingAssignment(): array;
-
-  /**
-   * Return the number of total documents awaiting analysis.
-   * @return int
-   */
-  public function getDocCountAwaitingAnalysis(): int;
 
   /**
    * Return the number of documents with analysis completed and no consensus.
@@ -106,6 +81,8 @@ interface AisStudyInterface extends NodeInterface {
   public function getDocCountAwaitingAgreement(): int;
 
   public function getDocIdsAwaitingAgreement(): array;
+
+  public function getDocIdsRejected(): array;
 
 }
 

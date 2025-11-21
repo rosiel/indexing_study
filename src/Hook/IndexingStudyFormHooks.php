@@ -42,6 +42,7 @@ class IndexingStudyFormHooks {
       // Move subjects to the right-hand sidebar.
       $form['field_ais_subjects']['#group'] = 'advanced';
       $form['field_ais_subjects']['#weight'] = 3;
+      $form['field_ais_subjects']['#attributes']['class'][] = 'is-subjects';
 
       // Move submit to the right-hand sidebar.
       $form['sidebar_submit'] = [

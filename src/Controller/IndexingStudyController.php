@@ -155,10 +155,11 @@ class IndexingStudyController extends ControllerBase {
       '#type' => 'table',
       '#headers' => ['count','label'],
       '#rows' => [
-        [$study_node->getDocCountWith0Analyses(), $this->t('Documents with 0 analyses')],
-        [$study_node->getDocCountWith1Analysis(), $this->t('Documents with 1 analysis')],
-        [$study_node->getDocCountWith2Analyses(), $this->t('Documents with 2 analyses')],
-        [$study_node->getDocCountWithOver2Analyses(), $this->t('Documents with over 2 analyses')],
+        [count($study_node->getDocIdsByAnalysisCount('0')), $this->t('Documents with 0 analyses')],
+        [count($study_node->getDocIdsByAnalysisCount('1')), $this->t('Documents with 1 analysis')],
+        [count($study_node->getDocIdsByAnalysisCount('2')), $this->t('Documents with 2 analyses')],
+        [count($study_node->getDocIdsByAnalysisCount('>2')), $this->t('Documents with over 2 analyses')],
+        [count($study_node->getDocIdsRejected()), $this->t('Documents rejected')]
 
       ],
     ];

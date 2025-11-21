@@ -49,34 +49,6 @@ class AisStudy extends Node implements  AisStudyInterface {
     return count($this->getDocIdsFullyAssigned());
   }
 
-  // Todo: put the analysis stuff here.
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getDocCountWith0Analyses(): int {
-    return count($this->getDocIdsWith0Analyses());
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getDocCountWith1Analysis(): int {
-    return count($this->getDocIdsWith1Analysis());
-  }
-  /**
-   * {@inheritdoc}
-   */
-  public function getDocCountWith2Analyses(): int {
-    return count($this->getDocIdsWith2Analyses());
-  }
-  /**
-   * {@inheritdoc}
-   */
-  public function getDocCountWithOver2Analyses(): int {
-    return count($this->getDocIdsWithOver2Analyses());
-  }
-
   /**
    * {@inheritdoc}
    */
@@ -91,7 +63,7 @@ class AisStudy extends Node implements  AisStudyInterface {
    */
   public function getAssignmentIdsForAnalysis(): array {
     $config = $this->getConfig();
-    // TODO: rewrite this to use a dtabase query.
+    // TODO: rewrite this to use a database query.
     // We will calculate those for analysis by:
     //  * getting subject analyses from entityquery
     //  * getting the "completed" assignments from the subject analyses
@@ -141,7 +113,7 @@ class AisStudy extends Node implements  AisStudyInterface {
       ->execute();
   }
 
-  protected function getDocIdsRejected() {
+  public function getDocIdsRejected(): array {
     $config = $this->getConfig();
     // Assignment.document field shorthand
     $adf = $config->get('assignment.document_field');
@@ -236,7 +208,8 @@ class AisStudy extends Node implements  AisStudyInterface {
     return $this->getDocIdsByAnalysisCount('>2');
   }
 
-  public function getDocIdsByAnalysisCount($count = NULL) {
+  public function getDocIdsByAnalysisCount($count = NULL): array
+  {
     $config = $this->getConfig();
     // Subject analysis document field shorthand
     $sadf = $config->get('subject_analysis.document_field');
@@ -285,18 +258,6 @@ class AisStudy extends Node implements  AisStudyInterface {
       ->execute();
   }
 
-  public function getDocCountAwaitingAnalysis(): int {
-    // Get documents in this study.
-    $docs = $this->getDocIdsAll();
-
-    // Get rejected documents.
-    $rejected = $this->getDocIdsRejected();
-
-    // Get unfinished assignments.
-
-    return 9999;
-  }
-
   public function getDocIdsAwaitingConsensus(): array
   {
     $config = $this->getConfig();
@@ -343,17 +304,5 @@ class AisStudy extends Node implements  AisStudyInterface {
   public function getDocCountAwaitingAgreement(): int {
     return count($this->getDocIdsAwaitingAgreement());
   }
-
-
-  // START CRUFT
-
-  public function getDocCountInStudyAwaitingReview(): string {
-    return (string)$this->count_rows_in_view('indexing_study_node_views', '4_needs_review');
-  }
-  public function getDocCountInStudyAwaitingReviewByUser(): string {
-    return (string)$this->count_rows_in_view('indexing_study_node_views', '5_needs_review_by_user');
-  }
-
-  // END CRUFT
 
 }
