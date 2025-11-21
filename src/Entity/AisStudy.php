@@ -1,6 +1,7 @@
 <?php
 namespace Drupal\indexing_study\Entity;
 
+use Exception;
 use Drupal\Core\Config\ImmutableConfig;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\indexing_study\IndexingStudyUtils;
@@ -305,4 +306,30 @@ class AisStudy extends Node implements  AisStudyInterface {
     return count($this->getDocIdsAwaitingAgreement());
   }
 
+  public function createAssignments(array $reviewers): bool
+  {
+    $all_reviewer_ids = array_map(function($u) {
+      return $u->id();
+    }, $reviewers);
+
+    $documentIds = $this->getDocIdsAwaitingAssignment();
+    foreach ($documentIds as $documentId) {
+      $document = $this->entityTypeManager()->getStorage('node')->load($documentId);
+
+      while ($document->needsAssignment()) {
+        $existing_reviewers = $document->getAssignedUserIds();
+        $eligible_reviewers = array_diff($all_reviewer_ids, $existing_reviewers);
+        if (count($eligible_reviewers) < 1) {
+          // TODO Throw an error.
+          throw new Exception("No eligible reviewers for document {$documentId}.");
+        }
+        $lucky_index = array_rand($eligible_reviewers);
+        $new_assignment = \Drupal::service('indexing_study.utils')->createAssignment($documentId, $eligible_reviewers[$lucky_index]);
+        if (!$new_assignment) {
+          throw new Exception("Assignments could not be completed for document {$documentId}.");
+        }
+      }
+    }
+    return True;
+  }
 }

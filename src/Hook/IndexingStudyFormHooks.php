@@ -32,7 +32,12 @@ class IndexingStudyFormHooks {
    */
   #[Hook('form_alter')]
   public function formAlter(&$form, FormStateInterface $form_state, $form_id): void {
+    // Set subject analysis bundle form.
     if ($form_id == 'node_' . $this->config->get('subject_analysis.bundle') . '_form') {
+
+      $form['#after_build'][] = [self::class, 'showDocument'];
+      $form[$this->config->get('subject_analysis.document_field')]['#after_build'][] = [self::class, 'setDisabled'];
+      $form[$this->config->get('subject_analysis.assignment_field')]['#after_build'][] = [self::class, 'setDisabled'];
 
       // Don't display the meta or revision information.
       $form['meta']['author']['#access'] = False;
@@ -79,6 +84,24 @@ class IndexingStudyFormHooks {
         $assignment->save();
       }
     }
+  }
+
+  public static function setDisabled($element, $form_state) {
+    // TODO: Refactor to be like ECA's FormFieldDisable.
+    if (isset($element['widget'][0]['target_id']['#default_value'])) {
+      $element['widget'][0]['target_id']['#attributes']['disabled'] = 'disabled';
+    }
+    return $element;
+  }
+
+  public static function showDocument($element, $form_state) {
+    if (isset($element['field_ais_document']['widget'][0]['target_id']['#default_value'])) {
+      $document = $element['field_ais_document']['widget'][0]['target_id']['#default_value'][0];
+      $view_builder = \Drupal::entityTypeManager()->getViewBuilder('node');
+      array_unshift($element, $view_builder->view($document, 'document_without_subjects'));
+    } ;
+
+    return $element;
   }
 
 }

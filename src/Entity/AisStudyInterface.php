@@ -84,6 +84,7 @@ interface AisStudyInterface extends NodeInterface {
 
   public function getDocIdsRejected(): array;
 
+  public function createAssignments(array $reviewers): bool;
 }
 
 

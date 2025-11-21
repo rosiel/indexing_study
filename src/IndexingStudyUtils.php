@@ -3,6 +3,7 @@
 namespace Drupal\indexing_study;
 
 use Drupal\Core\Entity\EntityStorageException;
+use Drupal\indexing_study\Entity\AisDocumentInterface;
 use Drupal\indexing_study\Entity\AisStudyInterface;
 use Drupal\node\Entity\Node;
 use Drupal\node\NodeInterface;
@@ -59,6 +60,7 @@ class IndexingStudyUtils
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
    * @param \Psr\Log\LoggerInterface
+   *   The logger.
    */
   public function __construct(
     EntityTypeManagerInterface $entityTypeManager,
@@ -69,51 +71,12 @@ class IndexingStudyUtils
     $this->logger = $logger;
   }
 
-
-  public function createAssignmentsForStudy(NodeInterface $study, $reviewers, $reviewers_per_document) {
-    $all_reviewer_ids = array_map(function($u) {
-      return $u->id();
-    }, $reviewers);
-
-    $documentIds = $study->getDocIdsAwaitingAssignment();
-    foreach ($documentIds as $documentId) {
-      $document = $this->entityTypeManager->getStorage('node')->load($documentId);
-
-      while ($document->needsAssignment()) {
-        $existing_reviewers = $document->getAssignedUserIds();
-        $eligible_reviewers = array_diff($all_reviewer_ids, $existing_reviewers);
-        if (count($eligible_reviewers) < 1) {
-          $this->logger->error("No reviewer could be assigned for document {$documentId}.");
-
-          return NULL;
-        }
-        $lucky_index = array_rand($eligible_reviewers);
-        $new_assignment = $this->createAssignment($documentId, $eligible_reviewers[$lucky_index]);
-        if (!$new_assignment) {
-          $this->logger->error("Assignments could not be completed for document {$documentId}.");
-          return NULL;
-        }
-      }
-    }
-    return True;
-  }
-
-  public function getValidAssignmentsForDocumentId($documentId) {
-    $assignment_ids = $this->entityTypeManager->getStorage('node')->getQuery()
-      ->accessCheck(TRUE)
-      ->condition('status', 1)
-      ->condition('type', self::ASSIGNMENT_BUNDLE)
-      ->condition(self::ASSIGNMENT_DOCUMENT_FIELD, $documentId)
-      ->execute();
-    return $this->entityTypeManager->getStorage('node')->loadMultiple($assignment_ids);
-  }
-
   public function createAssignment(int $documentId, int $userId)
   {
     $document = $this->entityTypeManager->getStorage('node')->load($documentId);
     $user = $this->entityTypeManager->getStorage('user')->load($userId);
     // Test if document is a document
-    if ($document->bundle() != self::DOCUMENT_BUNDLE) {
+    if (!($document instanceof AisDocumentInterface)) {
       $this->logger->error("Assignment requires a 'document' node, '" . $document->bundle() . "' given.");
       return NULL;
     }

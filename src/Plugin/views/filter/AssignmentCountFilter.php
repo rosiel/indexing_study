@@ -11,19 +11,10 @@ use Drupal\indexing_study\IndexingStudyUtils;
  */
 class AssignmentCountFilter extends AbstractRelatedNodeCountFilter {
 
-  /**
-   * @inheritdoc
-   */
-  protected $node_type = IndexingStudyUtils::ASSIGNMENT_BUNDLE;
-
-  /**
-   * @inheritdoc
-   */
-  protected $relating_field = IndexingStudyUtils::ASSIGNMENT_DOCUMENT_FIELD;
-
-  /**
-   * @inheritdoc
-   */
-  protected $root_node_type = IndexingStudyUtils::DOCUMENT_BUNDLE;
-
+  public function __construct($configuration, $plugin_id, $plugin_definition) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition);
+    $this->node_type = $this->config->get('assignment.bundle');
+    $this->relating_field = $this->config->get('assignment.document_field');
+    $this->root_node_type = $this->config->get('document.bundle');
+  }
 }

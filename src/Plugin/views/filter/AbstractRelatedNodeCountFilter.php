@@ -1,6 +1,7 @@
 <?php
 namespace Drupal\indexing_study\Plugin\views\filter;
 
+use Drupal\Core\Config\ImmutableConfig;
 use Drupal\views\Plugin\views\filter\NumericFilter;
 
 /**
@@ -33,6 +34,18 @@ class AbstractRelatedNodeCountFilter extends NumericFilter {
   protected $relating_field = '';
 
   /**
+   * The indexing study config.
+   *
+   * @var \Drupal\Core\Config\ImmutableConfig
+   */
+  protected ImmutableConfig $config;
+
+  public function __construct($configuration, $plugin_id, $plugin_definition) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition);
+    $this->config = \Drupal::config('indexing_study.settings');
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function query() {
@@ -43,13 +56,11 @@ class AbstractRelatedNodeCountFilter extends NumericFilter {
     // Create subquery to get document IDs with their review counts
     $subquery = $database->select('node', 'n');
     $subquery->leftJoin('node__' . $this->relating_field, 'fd',
-      'n.nid = fd.' . $this->relating_field . '_target_id');
-    $subquery->leftJoin('node', 'related_nodes', 'fd.entity_id = related_nodes.nid AND related_nodes.type = :node_type', [
-      ':node_type' => $this->node_type,
-    ]);
+      'n.nid = fd.' . $this->relating_field . '_target_id AND fd.bundle = :node_type', [
+        ':node_type' => $this->node_type,
+      ]);
 
     $subquery->addField('n', 'nid', 'document_id');
-    $subquery->addExpression('COUNT(related_nodes.nid)', 'assignment_count');
     $subquery->condition('n.type', $this->root_node_type)
       ->groupBy('n.nid');
 
@@ -65,7 +76,7 @@ class AbstractRelatedNodeCountFilter extends NumericFilter {
     }
     else {
       // If no documents match, ensure no results
-      $this->query->addWhere($this->options['group'], '1', '0', '=');
+      $this->query->addWhere($this->options['group'], 1, 0, '=');
     }
 
   }
@@ -80,34 +91,34 @@ class AbstractRelatedNodeCountFilter extends NumericFilter {
 
     switch ($this->operator) {
       case '=':
-        return "COUNT(related_nodes.nid) = " . (int)$value;
+        return "COUNT(fd.entity_id) = " . (int)$value;
 
       case '!=':
-        return "COUNT(related_nodes.nid) != " . (int)$value;
+        return "COUNT(fd.entity_id) != " . (int)$value;
 
       case '>':
-        return "COUNT(related_nodes.nid) > " . (int)$value;
+        return "COUNT(fd.entity_id) > " . (int)$value;
 
       case '>=':
-        return "COUNT(related_nodes.nid) >= " . (int)$value;
+        return "COUNT(fd.entity_id) >= " . (int)$value;
 
       case '<':
-        return "COUNT(related_nodes.nid) < " . (int)$value;
+        return "COUNT(fd.entity_id) < " . (int)$value;
 
       case '<=':
-        return "COUNT(related_nodes.nid) <= " . (int)$value;
+        return "COUNT(fd.entity_id) <= " . (int)$value;
 
       case 'between':
-        return "COUNT(related_nodes.nid) BETWEEN " . (int)$min . " AND " . (int)$max;
+        return "COUNT(fd.entity_id) BETWEEN " . (int)$min . " AND " . (int)$max;
 
       case 'not between':
-        return "COUNT(related_nodes.nid) NOT BETWEEN " . (int)$min . " AND " . (int)$max;
+        return "COUNT(fd.entity_id) NOT BETWEEN " . (int)$min . " AND " . (int)$max;
 
       case 'empty':
-        return "COUNT(related_nodes.nid) = 0";
+        return "COUNT(fd.entity_id) = 0";
 
       case 'not empty':
-        return "COUNT(related_nodes.nid) > 0";
+        return "COUNT(fd.entity_id) > 0";
 
       default:
         return NULL;

@@ -2,12 +2,14 @@
 
 namespace Drupal\indexing_study\Form;
 
+use Drupal\Core\Config\ImmutableConfig;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Messenger\MessengerTrait;
-use Drupal\indexing_study\IndexingStudyUtils;
+use Drupal\indexing_study\Entity\AisStudy;
 use Drupal\node\NodeInterface;
+use Exception;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -20,26 +22,24 @@ class IndexingStudyAssignmentForm extends FormBase {
    *
    * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
-  protected $entityTypeManager;
+  protected EntityTypeManagerInterface $entityTypeManager;
 
   /**
-   * Indexing study utilities.
+   * The Indexing study config.
    *
-   * @var \Drupal\indexing_study\IndexingStudyUtils
+   * @var \Drupal\Core\Config\ImmutableConfig
    */
-  protected $utils;
+  protected ImmutableConfig $config;
 
   /**
    * Constructor.
    *
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
    *   The entity type manager.
-   * @param \Drupal\indexing_study\IndexingStudyUtils $utils
-   *   The Indexing Study Utils.
    */
-  public function __construct(EntityTypeManagerInterface $entityTypeManager, IndexingStudyUtils $utils) {
+  public function __construct(EntityTypeManagerInterface $entityTypeManager) {
     $this->entityTypeManager = $entityTypeManager;
-    $this->utils = $utils;
+    $this->config = $this->config('indexing_study.settings');
   }
 
   /**
@@ -47,8 +47,7 @@ class IndexingStudyAssignmentForm extends FormBase {
    */
   public static function create(ContainerInterface $container) {
     return new static(
-      $container->get('entity_type.manager'),
-      $container->get('indexing_study.utils')
+      $container->get('entity_type.manager')
     );
   }
 
@@ -56,24 +55,14 @@ class IndexingStudyAssignmentForm extends FormBase {
     return 'indexing_study_assignment_form';
   }
 
-  public function buildForm(array $form, FormStateInterface $form_state, NodeInterface $study_node = NULL) {
-    if (!$study_node or $study_node->bundle() != IndexingStudyUtils::STUDY_BUNDLE) {
-      $this->messenger()->addError($this->t('Could not load study.'));
-      return $form;
-    }
-
+  public function buildForm(array $form, FormStateInterface $form_state, AisStudy $study_node = NULL) {
     $study_title = $study_node->getTitle();
-    $reviewers_per_document_value = $study_node->field_ais_reveiwers_per_document->value ?? 5;
+    $reviewers_per_document_value = 2;
     $documents_to_assign = (int) $study_node->getDocCountAwaitingAssignment();
 
     $form['study'] = [
       '#type' => 'value',
       '#value' => $study_node,
-    ];
-    $form['reviewers_per_document'] = [
-      '#type' => 'value',
-      '#title' => $this->t('Reviewers per document'),
-      '#value' => $reviewers_per_document_value,
     ];
     $form['study_info_display'] = [
       '#markup' => "<strong>Study title:</strong> " . $study_title . '<br/>',
@@ -110,24 +99,24 @@ class IndexingStudyAssignmentForm extends FormBase {
 
   public function validateForm(array &$form, FormStateInterface $form_state) {
     // Error if study can't be loaded.
-    if ((!$form_state->getValue('study') instanceof NodeInterface) or ($form_state->getValue('study')->bundle() != IndexingStudyUtils::STUDY_BUNDLE)) {
+    if ((!$form_state->getValue('study') instanceof NodeInterface) or ($form_state->getValue('study')->bundle() != $this->config->get('study.bundle'))) {
       $form_state->setErrorByName('study', $this->t('Study cannot be loaded.'));
     }
-    // Error if less than 1 reviewer-per-reference.
-    if ($form_state->getValue('reviewers_per_document') < 1) {
-      $form_state->setErrorByName('reviewers_per_document', $this->t('The reviewers per document must be greater than 1.'));
-    }
-    // Error if fewer users than reviewers-per-reference.
-    if (count(array_filter($form_state->getValue('reviewers'))) < $form_state->getValue('reviewers_per_reference')) {
+    // Error if fewer users than reviewers-per-reference (hardcoded at 2).
+    if (count(array_filter($form_state->getValue('reviewers'))) < 2) {
       $form_state->setErrorByName('reviewers', $this->t('There must be at least as many reviewers as reviewers per document.'));
     }
     parent::validateForm($form, $form_state);
   }
 
   public function submitForm(array &$form, FormStateInterface $form_state) {
-
     $study = $form_state->getValue('study');
-    $reviewers_per_document = $form_state->getValue('reviewers_per_document');
+
+    if (!($study instanceof AisStudyInterface)) {
+      return;
+    }
+
+    // Get the selected users.
     $all_users = $form_state->getValue('reviewers');
     $users = [];
     foreach ($all_users as $user_id => $value) {
@@ -136,9 +125,14 @@ class IndexingStudyAssignmentForm extends FormBase {
         $users[] = $user;
       }
     }
-    $assignments_created = $this->utils->createAssignmentsForStudy($study, $users, $reviewers_per_document);
-    if (!$assignments_created) {
-      $this->messenger()->addError($this->t('An error occurred. Check the logs for details.'));
+
+    // Attempt to make the assignments.
+    try {
+      $study->createAssignments($users);
+    } catch (Exception $e) {
+      $this->messenger()->addError($e);
+      $form_state->setRedirect('indexing_study.assign', ['study_node' => $study->id()]);
+      return;
     }
     $form_state->setRedirect('indexing_study.study', ['study_node' => $study->id()]);
   }

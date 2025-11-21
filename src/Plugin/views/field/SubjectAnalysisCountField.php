@@ -10,13 +10,12 @@ use Drupal\indexing_study\Plugin\views\field\AbstractRelatedNodeCountField;
  * @ViewsField("subject_analysis_count_field")
  */
 class SubjectAnalysisCountField extends AbstractRelatedNodeCountField {
-
-  protected $node_type = IndexingStudyUtils::SUBJECT_ANALYSIS_BUNDLE;
-  protected $relating_field = IndexingStudyUtils::ASSIGNMENT_DOCUMENT_FIELD;
-
-  protected $root_node_type = IndexingStudyUtils::DOCUMENT_BUNDLE;
-
-
+  public function __construct($configuration, $plugin_id, $plugin_definition) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition);
+    $this->node_type = $this->config->get('subject_analysis.bundle');
+    $this->relating_field = $this->config->get('subject_analysis.document_field');
+    $this->root_node_type = $this->config->get('document.bundle');
+  }
   public function query() {
     // Do nothing - we're computing the value in parent::render().
   }

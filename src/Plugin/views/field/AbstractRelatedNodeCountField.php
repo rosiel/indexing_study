@@ -15,6 +15,13 @@ class AbstractRelatedNodeCountField extends FieldPluginBase {
   protected $node_type = '';
   protected $root_node_type = '';
   protected $relating_field = '';
+
+  protected $config;
+
+  public function __construct($configuration, $plugin_id, $plugin_definition) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition);
+    $this->config = \Drupal::config('indexing_study.settings');
+  }
   /**
    * {@inheritdoc}
    */
@@ -26,7 +33,8 @@ class AbstractRelatedNodeCountField extends FieldPluginBase {
   /**
    * {@inheritdoc}
    */
-  public function render(ResultRow $values) {
+  public function render(ResultRow $values): \Drupal\Component\Render\MarkupInterface|int|string|\Drupal\views\Render\ViewsRenderPipelineMarkup
+  {
     $entity = $this->getEntity($values);
 
     if (!$entity instanceof NodeInterface || $entity->bundle() !== $this->root_node_type) {
@@ -43,7 +51,6 @@ class AbstractRelatedNodeCountField extends FieldPluginBase {
   protected function getRelatedNodeCount($document_id): int {
     $query = \Drupal::entityQuery('node')
       ->condition('type', $this->node_type)
-      ->condition('status', 1)
       ->condition($this->relating_field, $document_id)
       ->accessCheck(FALSE);
 
