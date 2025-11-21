@@ -82,6 +82,9 @@ class IndexingStudyBreadcrumbBuilder implements BreadcrumbBuilderInterface {
     $breadcrumb = new Breadcrumb();
     $breadcrumb->addLink(Link::createFromRoute($this->t('Home'), '<front>'));
     $destination = $this->requestStack->getCurrentRequest()->query->get('destination');
+    if (!$destination) {
+      return $breadcrumb;
+    }
     $destination_nid = preg_replace('/^\/study\/(\d+)\/[a-z_]*$/', '$1', $destination);
     if (!$destination_nid) {
       return $breadcrumb;

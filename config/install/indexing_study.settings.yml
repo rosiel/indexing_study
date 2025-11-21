@@ -5,6 +5,7 @@ study:
 document:
   bundle: 'ais_document'
   study_field: 'field_ais_study'
+  subjects_field: 'field_ais_subject_headings'
 assignment:
   bundle: 'ais_assignment'
   user_field: 'field_ais_reviewer'
@@ -13,10 +14,16 @@ subject_analysis:
   bundle: 'ais_subject_analysis'
   assignment_field: 'field_ais_assignment'
   document_field: 'field_ais_document'
+  subjects_field: 'field_ais_subjects'
 consensus:
   bundle: 'ais_consensus'
   subject_analysis_field: 'field_ais_analyses'
   document_field: 'field_ais_document'
+  subjects_field: 'field_ais_subjects'
 agreement:
   bundle: 'ais_agreement'
+  consensus_field: 'field_ais_consensus'
   document_field: 'field_ais_document'
+feed:
+  bundle: 'ais_document_import'
+  study_field: 'field_ais_study'
