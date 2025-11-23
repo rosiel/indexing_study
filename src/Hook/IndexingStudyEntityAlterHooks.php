@@ -16,17 +16,18 @@ class IndexingStudyEntityAlterHooks {
    */
   #[Hook('entity_bundle_info_alter')]
   public function entityBundleInfoAlter(array &$bundles): void {
-    if (isset($bundles['node']['ais_study'])) {
-      $bundles['node']['ais_study']['class'] = AisStudy::class;
+    $config = \Drupal::config('indexing_study.settings');
+    if (isset($bundles['node'][$config->get('study.bundle')])) {
+      $bundles['node'][$config->get('study.bundle')]['class'] = AisStudy::class;
     }
-    if (isset($bundles['node']['ais_document'])) {
-      $bundles['node']['ais_document']['class'] = AisDocument::class;
+    if (isset($bundles['node'][$config->get('document.bundle')])) {
+      $bundles['node'][$config->get('document.bundle')]['class'] = AisDocument::class;
     }
-    if (isset($bundles['node']['ais_subject_analysis'])) {
-      $bundles['node']['ais_subject_analysis']['class'] = AisSubjectAnalysis::class;
+    if (isset($bundles['node'][$config->get('subject_analysis.bundle')])) {
+      $bundles['node'][$config->get('subject_analysis.bundle')]['class'] = AisSubjectAnalysis::class;
     }
-    if (isset($bundles['node']['ais_assignment'])) {
-      $bundles['node']['ais_assignment']['class'] = AisAssignment::class;
+    if (isset($bundles['node'][$config->get('assignment.bundle')])) {
+      $bundles['node'][$config->get('assignment.bundle')]['class'] = AisAssignment::class;
     }
   }
 

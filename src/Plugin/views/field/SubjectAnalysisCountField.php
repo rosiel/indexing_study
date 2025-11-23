@@ -1,9 +1,6 @@
 <?php
 namespace Drupal\indexing_study\Plugin\views\field;
 
-use Drupal\indexing_study\IndexingStudyUtils;
-use Drupal\indexing_study\Plugin\views\field\AbstractRelatedNodeCountField;
-
 /**
  * Custom field to display subject analysis count.
  *

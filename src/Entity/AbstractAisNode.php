@@ -27,4 +27,11 @@ class AbstractAisNode extends Node
     return $this->config;
   }
 
+  protected function intify_array($array) {
+    $return_array = [];
+    foreach ($array as $value) {
+      $return_array[] = (int) $value;
+    }
+    return $return_array;
+  }
 }

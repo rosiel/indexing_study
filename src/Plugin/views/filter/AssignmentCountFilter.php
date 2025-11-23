@@ -1,9 +1,6 @@
 <?php
 namespace Drupal\indexing_study\Plugin\views\filter;
 
-use Drupal\indexing_study\Plugin\views\filter\AbstractRelatedNodeCountFilter;
-use Drupal\indexing_study\IndexingStudyUtils;
-
 /**
  * Custom field to display review count for documents.
  *

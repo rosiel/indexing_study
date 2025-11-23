@@ -4,7 +4,6 @@ namespace Drupal\indexing_study\Plugin\views\field;
 use Drupal\views\Plugin\views\field\FieldPluginBase;
 use Drupal\views\ResultRow;
 use Drupal\node\NodeInterface;
-use Drupal\indexing_study\IndexingStudyUtils;
 
 /**
  * Custom field to display review count.

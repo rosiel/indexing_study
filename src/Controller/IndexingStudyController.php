@@ -27,10 +27,12 @@ class IndexingStudyController extends ControllerBase {
       return AccessResult::forbidden();
     }
     $users_in_study = $study_node->getReviewers();
-    if (in_array($account, $users_in_study)) {
-          return AccessResult::allowed();
+    foreach ($users_in_study as $user_in_study) {
+      if ($account->id() == $user_in_study->id()) {
+        return AccessResult::allowed();
+      }
     }
-    else if ($account->hasPermission('administer content')) {
+    if ($account->hasPermission('administer content')) {
       return AccessResult::allowed();
     }
     return AccessResult::forbidden();

@@ -1,9 +1,9 @@
 <?php
 namespace Drupal\indexing_study\Entity;
 
+// TODO: clear these out.
 use Drupal\Core\Config\ImmutableConfig;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\indexing_study\IndexingStudyUtils;
 use Drupal\migrate\Plugin\migrate\process\ArrayBuild;
 use Drupal\node\Entity\Node;
 use Drupal\user\UserInterface;
@@ -19,7 +19,7 @@ class AisDocument extends AbstractAisNode implements  AisDocumentInterface {
       ->condition('type', $this->config()->get('subject_analysis.bundle'))
       ->condition($this->config()->get('subject_analysis.document_field'), $this->id())
       ->execute();
-    return \Drupal::service('indexing_study.utils')->intify_array($analysis_ids);
+    return $this->intify_array($analysis_ids);
   }
 
   public function getConsensus(): array
@@ -30,7 +30,7 @@ class AisDocument extends AbstractAisNode implements  AisDocumentInterface {
       ->condition('type', $this->config()->get('consensus.bundle'))
       ->condition($this->config()->get('consensus.document_field'), $this->id())
       ->execute();
-    return \Drupal::service('indexing_study.utils')->intify_array($consensus_ids);
+    return $this->intify_array($consensus_ids);
   }
 
   /**
@@ -117,7 +117,7 @@ class AisDocument extends AbstractAisNode implements  AisDocumentInterface {
     }
 
     // Create assignment.
-    $assignment = Node::create([
+    $assignment = AisAssignment::create([
       'type' => $this->config->get('assignment.bundle'),
       'title' => 'Assignment of ' . $this->id() . ' to ' . $user->getAccountName()
     ]);

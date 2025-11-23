@@ -75,7 +75,7 @@ class IndexingStudyAssignmentForm extends FormBase {
     $form['documents_to_assign'] = [
       '#markup' => '<br/><br/><strong>Documents to assign:</strong> ' . (string) $documents_to_assign,
     ];
-    $users_in_study = $study_node->get('field_ais_participants')->getValue();
+    $users_in_study = $study_node->get($this->config->get('study.reviewers_field'))->getValue();
     $user_options = [];
     foreach ($users_in_study as $user_in_study) {
       $user_id = $user_in_study['target_id'];
@@ -99,12 +99,12 @@ class IndexingStudyAssignmentForm extends FormBase {
 
   public function validateForm(array &$form, FormStateInterface $form_state) {
     // Error if study can't be loaded.
-    if ((!$form_state->getValue('study') instanceof NodeInterface) or ($form_state->getValue('study')->bundle() != $this->config->get('study.bundle'))) {
+    if (!$form_state->getValue('study') instanceof AisStudyInterface) {
       $form_state->setErrorByName('study', $this->t('Study cannot be loaded.'));
     }
     // Error if fewer users than reviewers-per-reference (hardcoded at 2).
     if (count(array_filter($form_state->getValue('reviewers'))) < 2) {
-      $form_state->setErrorByName('reviewers', $this->t('There must be at least as many reviewers as reviewers per document.'));
+      $form_state->setErrorByName('reviewers', $this->t('There must be at least 2 reviewers assigned.'));
     }
     parent::validateForm($form, $form_state);
   }

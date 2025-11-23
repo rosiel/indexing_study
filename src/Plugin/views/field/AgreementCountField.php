@@ -1,9 +1,6 @@
 <?php
 namespace Drupal\indexing_study\Plugin\views\field;
 
-use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\indexing_study\IndexingStudyUtils;
-
 /**
  * Custom field to display agreement count.
  *

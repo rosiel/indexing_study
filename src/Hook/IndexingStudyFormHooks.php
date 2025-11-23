@@ -47,9 +47,9 @@ class IndexingStudyFormHooks {
       $form['revision_information']['#access'] = False;
 
       // Move subjects to the right-hand sidebar.
-      $form['field_ais_subjects']['#group'] = 'advanced';
-      $form['field_ais_subjects']['#weight'] = 3;
-      $form['field_ais_subjects']['#attributes']['class'][] = 'is-subjects';
+      $form[$this->config->get('subject_analysis.subjects_field')]['#group'] = 'advanced';
+      $form[$this->config->get('subject_analysis.subjects_field')]['#weight'] = 3;
+      $form[$this->config->get('subject_analysis.subjects_field')]['#attributes']['class'][] = 'is-subjects';
 
       // Move submit to the right-hand sidebar.
       $form['sidebar_submit'] = [

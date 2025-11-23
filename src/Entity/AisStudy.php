@@ -2,15 +2,7 @@
 namespace Drupal\indexing_study\Entity;
 
 use Drupal\user\Entity\User;
-use Drupal\views\Views;
 use Exception;
-use Drupal\Core\Config\ImmutableConfig;
-use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\indexing_study\IndexingStudyUtils;
-use Drupal\migrate\Plugin\migrate\process\ArrayBuild;
-use Drupal\node\Entity\Node;
-use Psr\Log\LoggerInterface;
-use Drupal\indexing_study\Entity\AisSubjectAnalysisInterface;
 
 class AisStudy extends AbstractAisNode implements  AisStudyInterface {
 
@@ -240,15 +232,19 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
     $query = $database->select('node', 'doc');
     $query->addField('doc', 'nid', 'document_id');
     $query->addExpression('COUNT(sa.nid)', 'subject_analysis_count');
-    $query->join('node__field_ais_document', 'fadsa', 'doc.nid = fadsa.field_ais_document_target_id');
-    $query->join('node', 'sa', 'sa.nid = fadsa.entity_id AND sa.type = :satype', [':satype' => $config->get('subject_analysis.bundle')]);
-    $query->join('node__field_ais_study', 'study_field', 'study_field.entity_id = doc.nid AND study_field.field_ais_study_target_id = :study_id', [':study_id' => $this->id()]);
+    $query->join('node__' . $this->config->get('subject_analysis.document_field'), 'fadsa',
+      'doc.nid = fadsa.' . $this->config->get('subject_analysis.document_field') . '_target_id');
+    $query->join('node', 'sa', 'sa.nid = fadsa.entity_id AND sa.type = :satype', [
+      ':satype' => $config->get('subject_analysis.bundle')]);
+    $query->join('node__' . $this->config->get('document.study_field'), 'study_field',
+      'study_field.entity_id = doc.nid AND study_field.' . $this->config->get('document.study_field') . '_target_id = :study_id', [
+        ':study_id' => $this->id()]);
     $query->condition('doc.type', $config->get('document.bundle'), '=' );
     $query->groupBy('doc.nid');
     $query->having('subject_analysis_count >= :limit', [':limit' => 2]);
-    $subquery = $database->select('node__field_ais_document','fadc');
+    $subquery = $database->select('node__' . $this->config->get('consensus.document_field'),'fadc');
     $subquery->join('node', 'con', 'con.nid = fadc.entity_id');
-    $subquery->addField('fadc', 'field_ais_document_target_id', 'document_id');
+    $subquery->addField('fadc', $this->config->get('consensus.document_field') . '_target_id', 'document_id');
     $subquery->condition('con.type', $config->get('consensus.bundle'), '=');
     $query->condition('doc.nid', $subquery, 'NOT IN');
     $results = $query->execute()->fetchAll();
@@ -263,14 +259,16 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
     $database = \Drupal::database();
     $query = $database->select('node', 'doc');
     $query->addField('doc', 'nid', 'document_id');
-    $query->join('node__field_ais_document', 'fadcon', 'doc.nid = fadcon.field_ais_document_target_id');
+    $query->join('node__' . $this->config->get('consensus.document_field'), 'fadcon',
+      'doc.nid = fadcon.' . $this->config->get('consensus.document_field') . '_target_id');
     $query->innerJoin('node', 'con', 'con.nid = fadcon.entity_id AND con.type = :contype', [':contype' => $config->get('consensus.bundle')]);
-    $query->join('node__field_ais_study', 'study_field', 'study_field.entity_id = doc.nid AND study_field.field_ais_study_target_id = :study_id', [':study_id' => $this->id()]);
+    $query->join('node__' . $this->config->get('document.study_field') , 'study_field',
+      'study_field.entity_id = doc.nid AND study_field.' . $this->config->get('document.study_field') . '_target_id = :study_id', [':study_id' => $this->id()]);
     $query->condition('doc.type', $config->get('document.bundle'), '=' );
     $query->groupBy('doc.nid');
-    $subquery = $database->select('node__field_ais_document','fadag');
+    $subquery = $database->select('node__' . $this->config->get('agreement.document_field'),'fadag');
     $subquery->join('node', 'ag', 'ag.nid = fadag.entity_id');
-    $subquery->addField('fadag', 'field_ais_document_target_id', 'document_id');
+    $subquery->addField('fadag', $this->config->get('agreement.document_field') . '_target_id', 'document_id');
     $subquery->condition('ag.type', $config->get('agreement.bundle'), '=');
     $query->condition('doc.nid', $subquery, 'NOT IN');
     $results = $query->execute()->fetchAll();
@@ -298,7 +296,7 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
           throw new Exception("No eligible reviewers for document {$documentId}.");
         }
         $lucky_index = array_rand($eligible_reviewers);
-        $new_assignment = \Drupal::service('indexing_study.utils')->createAssignment($documentId, $eligible_reviewers[$lucky_index]);
+        $new_assignment = $document->createAssignment($eligible_reviewers[$lucky_index]);
         if (!$new_assignment) {
           throw new Exception("Assignments could not be completed for document {$documentId}.");
         }
