@@ -26,8 +26,8 @@ class IndexingStudyController extends ControllerBase {
     if ($study_node->bundle() != $is_config->get('study.bundle')) {
       return AccessResult::forbidden();
     }
-    $users_in_study = array_column($study_node->get($is_config->get('study.reviewers_field'))->getValue(), 'target_id');
-    if (in_array($account->id(), $users_in_study)) {
+    $users_in_study = $study_node->getReviewers();
+    if (in_array($account, $users_in_study)) {
           return AccessResult::allowed();
     }
     else if ($account->hasPermission('administer content')) {
@@ -300,7 +300,7 @@ class IndexingStudyController extends ControllerBase {
    */
   public function analyze(AisStudyInterface $study_node) {
     $config = $this->config('indexing_study.settings');
-    $awaiting_analysis = $study_node->getAssignmentIdsForAnalysis();
+    $awaiting_analysis = $study_node->getAssignmentIdsForAnalysisByUser();
     if(count($awaiting_analysis) < 1) {
       return ['#markup' => $this->t('There are no outstanding documents needing your analysis in this study. 🥳'),
         '#cache' => ['max-age' => 0]];

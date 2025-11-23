@@ -7,7 +7,7 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Messenger\MessengerTrait;
-use Drupal\indexing_study\Entity\AisStudy;
+use Drupal\indexing_study\Entity\AisStudyInterface;
 use Drupal\node\NodeInterface;
 use Exception;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -55,7 +55,7 @@ class IndexingStudyAssignmentForm extends FormBase {
     return 'indexing_study_assignment_form';
   }
 
-  public function buildForm(array $form, FormStateInterface $form_state, AisStudy $study_node = NULL) {
+  public function buildForm(array $form, FormStateInterface $form_state, AisStudyInterface $study_node = NULL) {
     $study_title = $study_node->getTitle();
     $reviewers_per_document_value = 2;
     $documents_to_assign = (int) $study_node->getDocCountAwaitingAssignment();

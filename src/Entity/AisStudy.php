@@ -1,6 +1,8 @@
 <?php
 namespace Drupal\indexing_study\Entity;
 
+use Drupal\user\Entity\User;
+use Drupal\views\Views;
 use Exception;
 use Drupal\Core\Config\ImmutableConfig;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
@@ -8,32 +10,10 @@ use Drupal\indexing_study\IndexingStudyUtils;
 use Drupal\migrate\Plugin\migrate\process\ArrayBuild;
 use Drupal\node\Entity\Node;
 use Psr\Log\LoggerInterface;
+use Drupal\indexing_study\Entity\AisSubjectAnalysisInterface;
 
-class AisStudy extends Node implements  AisStudyInterface {
+class AisStudy extends AbstractAisNode implements  AisStudyInterface {
 
-
-  /**
-   * The Indexing Study Config.
-   *
-   * @var \Drupal\Core\Config\ImmutableConfig $config
-   */
-  protected ImmutableConfig $config;
-
-  private function getConfig() {
-    if (!isset($this->config)) {
-      $this->config = \Drupal::config('indexing_study.settings');
-    }
-    return $this->config;
-  }
-  private function count_rows_in_view($view_id, $display_id) {
-    $view = \Drupal\views\Views::getView($view_id);
-    $view->setDisplay($display_id);
-    $view->setArguments([$this->id()]);
-    $view->setItemsPerPage(0);
-    $view->execute();
-    $total_rows = count($view->result);
-    return $total_rows;
-  }
   public function getDocCount(): int {
     return count($this->getDocIdsAll());
   }
@@ -54,7 +34,7 @@ class AisStudy extends Node implements  AisStudyInterface {
    * {@inheritdoc}
    */
   public function getAssignmentCountForAnalysis(): int {
-    return count($this->getAssignmentIdsForAnalysis());
+    return count($this->getAssignmentIdsForAnalysisByUser());
   }
 
   /**
@@ -62,36 +42,31 @@ class AisStudy extends Node implements  AisStudyInterface {
    * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
    * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
-  public function getAssignmentIdsForAnalysis(): array {
-    $config = $this->getConfig();
-    // TODO: rewrite this to use a database query.
-    // We will calculate those for analysis by:
-    //  * getting subject analyses from entityquery
-    //  * getting the "completed" assignments from the subject analyses
-    //
-    // Get completed assignments from existing subject analyses
-    $analyses = \Drupal::entityQuery('node')
-      ->condition('type', $config->get('subject_analysis.bundle'))
-      ->accessCheck(TRUE)
-      ->execute();
+  public function getAssignmentIdsForAnalysisByUser(User $user = NULL): array {
+    // We will calculate assignments for analysis by:
+    //  * getting this study's subject analyses;
+    //  * getting the 'completed' assignment from each subject analysis;
+    //  * querying for all assignments in this study for the current user that aren't in that set of completed assignments.
+    $analyses = $this->getSubjectAnalyses();
     $completed_assignments = [];
-    foreach ($analyses as $analysis_id) {
-      $analysis_node = \Drupal::entityTypeManager()->getStorage('node')->load($analysis_id);
-      $related_assignment = $analysis_node->get($config->get('subject_analysis.assignment_field'))->getValue()[0]['target_id'];
-      if ($related_assignment) {
-        if (!(in_array($related_assignment, $completed_assignments))) {
-          $completed_assignments[] = $related_assignment;
+    foreach ($analyses as $analysis) {
+      if ($analysis instanceof AisSubjectAnalysisInterface) {
+        $completed_assignment = $analysis->getAssignment();
+        if (!(in_array($completed_assignment, $completed_assignments))) {
+          $completed_assignments[] = $completed_assignment->id();
         }
       }
     }
-    // Get current user
-    $current_user = \Drupal::currentUser()->id();
+    // Get current user if not passed in.
+    if (!$user) {
+      $user = \Drupal::currentUser();
+    }
     // Get assignments for that user with that study, that aren't in the completed assignments
     $assignment_query = \Drupal::entityQuery('node')
-      ->condition('type', $config->get('assignment.bundle'))
-      ->condition($config->get('assignment.document_field') . '.entity:node.' . $config->get('document.study_field'), $this->id())
-      ->condition($config->get('assignment.user_field'), $current_user)
-      ->condition('status', 1)
+      ->condition('type', $this->config->get('assignment.bundle'))
+      ->condition($this->config->get('assignment.document_field') . '.entity:node.' . $this->config->get('document.study_field'), $this->id())
+      ->condition($this->config->get('assignment.user_field'), $user->id())
+      ->condition('status', 1) // Exclude rejected assignments.
       ->accessCheck(TRUE);
     if (count($completed_assignments) > 0) {
       $assignment_query->condition('nid', $completed_assignments, 'NOT IN');
@@ -107,15 +82,14 @@ class AisStudy extends Node implements  AisStudyInterface {
    * @return array
    */
   public function getDocIdsAll()  {
-    $config = $this->getConfig();
     return \Drupal::entityTypeManager()->getStorage('node')->getQuery()
       ->accessCheck(FALSE)
-      ->condition($config->get('document.study_field'), $this->id())
+      ->condition($this->config->get('document.study_field'), $this->id())
       ->execute();
   }
 
   public function getDocIdsRejected(): array {
-    $config = $this->getConfig();
+    $config = $this->config();
     // Assignment.document field shorthand
     $adf = $config->get('assignment.document_field');
     // Document study field shorthand
@@ -150,7 +124,7 @@ class AisStudy extends Node implements  AisStudyInterface {
   }
 
   public function getDocIdsFullyAssigned() {
-    $config = $this->getConfig();
+    $config = $this->config();
     // Assignment.document field shorthand
     $adf = $config->get('assignment.document_field');
     // Document study field shorthand
@@ -211,7 +185,7 @@ class AisStudy extends Node implements  AisStudyInterface {
 
   public function getDocIdsByAnalysisCount($count = NULL): array
   {
-    $config = $this->getConfig();
+    $config = $this->config();
     // Subject analysis document field shorthand
     $sadf = $config->get('subject_analysis.document_field');
     // Document study field shorthand
@@ -250,7 +224,7 @@ class AisStudy extends Node implements  AisStudyInterface {
   }
 
   public function getDocIdsCompleted() {
-    $config = $this->getConfig();
+    $config = $this->config();
     return $this->entityTypeManager()->getStorage('node')->getQuery()
       ->accessCheck(FALSE)
       ->condition('type',$config->get('agreement.bundle'))
@@ -261,7 +235,7 @@ class AisStudy extends Node implements  AisStudyInterface {
 
   public function getDocIdsAwaitingConsensus(): array
   {
-    $config = $this->getConfig();
+    $config = $this->config();
     $database = \Drupal::database();
     $query = $database->select('node', 'doc');
     $query->addField('doc', 'nid', 'document_id');
@@ -285,7 +259,7 @@ class AisStudy extends Node implements  AisStudyInterface {
     return count($this->getDocIdsAwaitingConsensus());
   }
   public function getDocIdsAwaitingAgreement(): array {
-    $config = $this->getConfig();
+    $config = $this->config();
     $database = \Drupal::database();
     $query = $database->select('node', 'doc');
     $query->addField('doc', 'nid', 'document_id');
@@ -332,4 +306,19 @@ class AisStudy extends Node implements  AisStudyInterface {
     }
     return True;
   }
+
+  public function getReviewers(): array
+  {
+    return $this->get($this->config()->get('study.reviewers_field'))->referencedEntities();
+  }
+
+  protected function getSubjectAnalyses(): array {
+      $analyses = \Drupal::entityQuery('node')
+          ->condition('type', $this->config->get('subject_analysis.bundle'))
+         ->condition($this->config->get('assignment.document_field') . '.entity:node.' . $this->config->get('document.study_field'), $this->id())
+        ->accessCheck(TRUE)
+        ->execute();
+    return $this->entityTypeManager()->getStorage('node')->loadMultiple($analyses);
+  }
+
 }

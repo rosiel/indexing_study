@@ -3,6 +3,7 @@
 namespace Drupal\indexing_study\Entity;
 
 use Drupal\node\NodeInterface;
+use Drupal\user\Entity\User;
 
 interface AisStudyInterface extends NodeInterface {
 
@@ -46,7 +47,7 @@ interface AisStudyInterface extends NodeInterface {
    *
    * @return array
    */
-  public function getAssignmentIdsForAnalysis(): array;
+  public function getAssignmentIdsForAnalysisByUser(User $user = NULL): array;
 
   /**
    * Return the ids of documents with the specified number of analyses done.
@@ -85,6 +86,10 @@ interface AisStudyInterface extends NodeInterface {
   public function getDocIdsRejected(): array;
 
   public function createAssignments(array $reviewers): bool;
+
+  public function getReviewers(): array;
+
+
 }
 
 

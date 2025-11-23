@@ -2,6 +2,7 @@
 namespace Drupal\indexing_study\Entity;
 
 use Drupal\Core\Config\ImmutableConfig;
+use Drupal\user\UserInterface;
 
 
 interface AisDocumentInterface {
@@ -33,6 +34,10 @@ interface AisDocumentInterface {
    * Whether or not this document needs assignment.
    */
   public function needsAssignment(): bool;
+
+  public function createAssignment($userId): int|NULL;
+
+  public function assignment_exists(UserInterface $user): bool;
 
 }
 
