@@ -1,13 +1,7 @@
 <?php
 namespace Drupal\indexing_study\Entity;
 
-// TODO: clear these out.
-use Drupal\Core\Config\ImmutableConfig;
-use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\migrate\Plugin\migrate\process\ArrayBuild;
-use Drupal\node\Entity\Node;
 use Drupal\user\UserInterface;
-use Psr\Log\LoggerInterface;
 
 class AisDocument extends AbstractAisNode implements  AisDocumentInterface {
 
@@ -145,6 +139,12 @@ class AisDocument extends AbstractAisNode implements  AisDocumentInterface {
     } else {
       return False;
     }
+  }
+
+  public function getDependents(): array
+  {
+    return $this->computeDependents($this->config->get('assignment.bundle'),
+      $this->config->get('assignment.document_field'));
   }
 
 }

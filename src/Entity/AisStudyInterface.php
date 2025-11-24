@@ -2,10 +2,9 @@
 
 namespace Drupal\indexing_study\Entity;
 
-use Drupal\node\NodeInterface;
 use Drupal\user\Entity\User;
 
-interface AisStudyInterface extends NodeInterface {
+interface AisStudyInterface extends AbstractAisNodeInterface {
 
   /**
    * Return the total number of active documents in the study.

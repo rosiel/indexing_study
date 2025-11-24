@@ -319,4 +319,9 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
     return $this->entityTypeManager()->getStorage('node')->loadMultiple($analyses);
   }
 
+  public function getDependents(): array
+  {
+    return $this->computeDependents($this->config->get('document.bundle'),
+      $this->config->get('document.study_field'));
+  }
 }

@@ -1,11 +1,10 @@
 <?php
 namespace Drupal\indexing_study\Entity;
 
-use Drupal\Core\Config\ImmutableConfig;
 use Drupal\user\UserInterface;
 
 
-interface AisDocumentInterface {
+interface AisDocumentInterface extends AbstractAisNodeInterface {
 
 
   /**

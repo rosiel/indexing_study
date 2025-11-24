@@ -2,9 +2,8 @@
 
 namespace Drupal\indexing_study\Entity;
 
-use Drupal\node\NodeInterface;
 
-interface AisSubjectAnalysisInterface extends NodeInterface
+interface AisSubjectAnalysisInterface extends AbstractAisNodeInterface
 {
   /**
    * Return the analysis' associated assignment.

@@ -22,10 +22,6 @@ class IndexingStudyController extends ControllerBase {
    */
   public function access(AccountInterface $account, AisStudyInterface $study_node): Drupal\Core\Access\AccessResultForbidden|Drupal\Core\Access\AccessResultAllowed
   {
-    $is_config = $this->config('indexing_study.settings');
-    if ($study_node->bundle() != $is_config->get('study.bundle')) {
-      return AccessResult::forbidden();
-    }
     $users_in_study = $study_node->getReviewers();
     foreach ($users_in_study as $user_in_study) {
       if ($account->id() == $user_in_study->id()) {
@@ -376,7 +372,7 @@ class IndexingStudyController extends ControllerBase {
           'query' => [
             'consensus' => $consensus_id,
             'document' => $document_id,
-            'destination' => Url::fromRoute('indexing_study.consensus', ['study_node' => $study_node->id()])->toString()
+            'destination' => Url::fromRoute('indexing_study.agreement', ['study_node' => $study_node->id()])->toString()
           ]
         ]
       );

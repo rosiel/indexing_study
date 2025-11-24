@@ -5,6 +5,7 @@ namespace Drupal\indexing_study\Hook;
 
 use Drupal\Core\Hook\Attribute\Hook;
 use Drupal\indexing_study\Entity\AisAssignment;
+use Drupal\indexing_study\Entity\AisConsensus;
 use Drupal\indexing_study\Entity\AisStudy;
 use Drupal\indexing_study\Entity\AisDocument;
 use Drupal\indexing_study\Entity\AisSubjectAnalysis;
@@ -28,6 +29,9 @@ class IndexingStudyEntityAlterHooks {
     }
     if (isset($bundles['node'][$config->get('assignment.bundle')])) {
       $bundles['node'][$config->get('assignment.bundle')]['class'] = AisAssignment::class;
+    }
+    if (isset($bundles['node'][$config->get('consensus.bundle')])) {
+      $bundles['node'][$config->get('consensus.bundle')]['class'] = AisConsensus::class;
     }
   }
 

@@ -2,9 +2,7 @@
 
 namespace Drupal\indexing_study\Entity;
 
-use Drupal\node\NodeInterface;
-
-interface AisAssignmentInterface extends NodeInterface
+interface AisAssignmentInterface extends AbstractAisNodeInterface
 {
 
 }
