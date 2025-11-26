@@ -51,7 +51,16 @@ class IndexingStudyController extends ControllerBase {
     ];
     $build['study']['study_node'] = $this->entityTypeManager()
       ->getViewBuilder('node')
-      ->view($study_node, 'teaser');
+      ->view($study_node, 'default');
+    $edit_study_url = Url::fromRoute('entity.node.edit_form', [
+      'node' => $study_node->id(),
+      'destination' => Url::fromRoute('<current>')->toString()]);
+    $build['study']['edit_link'] = [
+      '#type' => 'link',
+      '#title' => $this->t('Edit study'),
+      '#url' => $edit_study_url,
+      '#access' => $edit_study_url->access(),
+    ];
 
     // Build the documents section.
     $add_documents_url = Url::fromRoute('entity.feeds_feed.add_form', [

@@ -1,0 +1,11 @@
+{
+    "name": "rosiel/indexing_study",
+    "description": "Workflow for analyzing automatic document indexing.",
+    "type": "drupal-module",
+    "require": {
+        "drupal/core": "^11"
+    },
+    "suggest": {
+    },
+    "license": "GPL-2.0-or-later"
+}

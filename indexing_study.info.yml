@@ -4,5 +4,4 @@ description: "Tools for assessing quality of indexing by humans and robots."
 package: custom
 core_version_requirement: ^11
 dependencies:
-  - twig_tweak:twig_tweak
   - drupal:views
