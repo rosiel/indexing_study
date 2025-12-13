@@ -133,8 +133,6 @@ class IndexingStudyFormHooks {
       $document = $element[$document_field]['widget'][0]['target_id']['#default_value'][0];
       $view_builder = \Drupal::entityTypeManager()->getViewBuilder('node');
       $rendered_node = $view_builder->view($document, 'document_without_subjects');
-      # Remove hyperlinked title.
-      unset($rendered_node['#node']->title);
       array_unshift($element, $rendered_node);
     }
     return $element;
