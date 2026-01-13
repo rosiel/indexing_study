@@ -5,12 +5,17 @@ namespace Drupal\indexing_study\Hook;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Config\ImmutableConfig;
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Hook\Attribute\Hook;
 use Drupal\Core\Render\Element;
+use Drupal\node\Entity\Node;
 use Drupal\node\NodeInterface;
+use Drupal\Core\StringTranslation\StringTranslationTrait;
+use function PHPUnit\Framework\isNumeric;
 
 class IndexingStudyFormHooks {
+  use StringTranslationTrait;
 
   /**
    * Indexing Study config.
@@ -34,9 +39,8 @@ class IndexingStudyFormHooks {
    */
   #[Hook('form_alter')]
   public function formAlter(&$form, FormStateInterface $form_state, $form_id): void {
-    // Set subject analysis bundle form.
+    // Subject analysis bundle form.
     if ($form_id == 'node_' . $this->config->get('subject_analysis.bundle') . '_form') {
-
       $form['#after_build'][] = [self::class, 'showDocument'];
       $form[$this->config->get('subject_analysis.document_field')]['#after_build'][] = [self::class, 'setDisabled'];
       $form[$this->config->get('subject_analysis.assignment_field')]['#after_build'][] = [self::class, 'setDisabled'];
@@ -74,12 +78,40 @@ class IndexingStudyFormHooks {
         '#weight' => 100,
       ];
     }
+    # Consensus form.
     else if ($form_id == 'node_' . $this->config->get('consensus.bundle') . '_form') {
+      $form['#attached']['library'][] = 'indexing_study/indexing_study';
       // Populate the bonus stuff for the Consensus page.
-      $form['#after_build'][] = [self::class, 'showSubjectsForConsensus'];
+      #$form['#after_build'][] = [self::class, 'showSubjectsForConsensus'];
       $form['#after_build'][] = [self::class, 'showDocument'];
       $form[$this->config->get('consensus.document_field')]['#after_build'][] = [self::class, 'setDisabled'];
       $form[$this->config->get('consensus.subject_analysis_field')]['#after_build'][] = [self::class, 'setDisabled'];
+      // Pivot to using paragraphs and checkboxes
+      $entity = $form_state->getFormObject()->getEntity();
+      $analyses = $entity->get($this->config->get('consensus.subject_analysis_field'))->getValue();
+      $subjects_to_compare = [
+        '#type' => 'container',
+        '#attributes' => ['class' => ['ais-subjects-wrapper']],
+      ];
+      foreach ($analyses as $delta => $analysis) {
+        if (isset($analysis['target_id'])) {
+          $analysis_entity = Node::load($analysis['target_id']);
+          $analysis_subjects = $analysis_entity->get($this->config->get('subject_analysis.subjects_field'))->getValue();
+          $options = [];
+          foreach (array_column($analysis_subjects, 'value') as $option) {
+            $options[$option] = $option;
+          }
+          $subjects_to_compare['reviewer_' . $delta + 1] = [
+            '#type' => 'checkboxes',
+            '#title' => $this->t('Reviewer ' . $delta + 1),
+            '#options' => $options,
+          ];
+        }
+      }
+      $form['field_consensus_subject_2']['#attributes']['class'][] = 'consensus-topic';
+      array_unshift($form, $subjects_to_compare);
+
+    # Agreement form.
     } else if ($form_id == 'node_' . $this->config->get('agreement.bundle') . '_form') {
       // Populate the bonus stuff for the Agreement page.
       $form['#after_build'][] = [self::class, 'showSubjectsForAgreement'];
@@ -167,7 +199,14 @@ class IndexingStudyFormHooks {
     ];
     if (isset($form[$config->get('consensus.subject_analysis_field')]['widget'][0]['target_id']['#default_value'])) {
       $subject_analysis = $form[$config->get('consensus.subject_analysis_field')]['widget'][0]['target_id']['#default_value'][0];
-      $subjects_to_compare['left'] = $subject_analysis->get($config->get('consensus.subjects_field'))->view('subjects_only');
+      $subjects_1 = $subject_analysis->get($config->get('consensus.subjects_field'))->view('subjects_only');
+      $subjects_11 = $subject_analysis->get($config->get('consensus.subjects_field'))->getValue();
+      $options = [];
+      foreach ($subjects_11 as $subject) {
+        $options[$subject['value']] = $subject['value'];
+      }
+
+      $subjects_to_compare['left'] = $subjects_1;
     }
 
     if (isset($form[$config->get('consensus.subject_analysis_field')]['widget'][1]['target_id']['#default_value'])) {

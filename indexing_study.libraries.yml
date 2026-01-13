@@ -2,3 +2,9 @@ indexing_study:
   css:
     theme:
       css/style.css: {}
+  js:
+    js/track-antecedents.js: { preprocess: false }
+  dependencies:
+    - core/jquery
+    - core/once
+    - core/drupal
