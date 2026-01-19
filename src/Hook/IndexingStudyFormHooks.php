@@ -78,15 +78,14 @@ class IndexingStudyFormHooks {
         '#weight' => 100,
       ];
     }
+
     # Consensus form.
     else if ($form_id == 'node_' . $this->config->get('consensus.bundle') . '_form') {
       $form['#attached']['library'][] = 'indexing_study/indexing_study';
       // Populate the bonus stuff for the Consensus page.
-      #$form['#after_build'][] = [self::class, 'showSubjectsForConsensus'];
       $form['#after_build'][] = [self::class, 'showDocument'];
       $form[$this->config->get('consensus.document_field')]['#after_build'][] = [self::class, 'setDisabled'];
       $form[$this->config->get('consensus.subject_analysis_field')]['#after_build'][] = [self::class, 'setDisabled'];
-      // Pivot to using paragraphs and checkboxes
       $entity = $form_state->getFormObject()->getEntity();
       $analyses = $entity->get($this->config->get('consensus.subject_analysis_field'))->getValue();
       $subjects_to_compare = [
@@ -108,7 +107,7 @@ class IndexingStudyFormHooks {
           ];
         }
       }
-      $form['field_consensus_subject_2']['#attributes']['class'][] = 'consensus-topic';
+      $form[$this->config->get('consensus.subjects_paragraph_field')]['#attributes']['class'][] = 'consensus-topic';
       array_unshift($form, $subjects_to_compare);
 
     # Agreement form.
@@ -180,11 +179,14 @@ class IndexingStudyFormHooks {
     if (isset($form[$config->get('agreement.document_field')]['widget'][0]['target_id']['#default_value'])) {
       $consensus = $form[$config->get('agreement.document_field')]['widget'][0]['target_id']['#default_value'][0];
       $subjects_to_compare['left'] = $consensus->get($config->get('document.subjects_field'))->view('subjects_only');
+      $subjects_to_compare['left']['#weight'] = 0;
     }
 
     if (isset($form[$config->get('agreement.consensus_field')]['widget'][0]['target_id']['#default_value'])) {
       $consensus = $form[$config->get('agreement.consensus_field')]['widget'][0]['target_id']['#default_value'][0];
-      $subjects_to_compare['right'] = $consensus->get($config->get('consensus.subjects_field'))->view('subjects_only');
+      $subjects_to_compare['right'] = $consensus->get($config->get('consensus.subjects_paragraph_field'))->view('subjects_only');
+      $subjects_to_compare['right']['#weight'] = 1;
+
     }
     array_unshift($form, $subjects_to_compare);
     return $form;

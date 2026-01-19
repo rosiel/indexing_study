@@ -19,10 +19,15 @@ consensus:
   bundle: 'ais_consensus'
   subject_analysis_field: 'field_ais_analyses'
   document_field: 'field_ais_document'
-  subjects_field: 'field_ais_subjects'
+  subjects_field: 'field_topic'
+  subjects_paragraph_field: 'field_consensus_subject_2'
 agreement:
   bundle: 'ais_agreement'
   consensus_field: 'field_ais_consensus'
+  document_field: 'field_ais_document'
+agreement_consensus:
+  bundle: 'ais_agreement_consensus'
+  agreement_field: 'field_ais_agreements'
   document_field: 'field_ais_document'
 feed:
   bundle: 'ais_document_import'

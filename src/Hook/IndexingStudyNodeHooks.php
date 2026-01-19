@@ -3,6 +3,7 @@
 namespace Drupal\indexing_study\Hook;
 
 use Drupal\Core\Hook\Attribute\Hook;
+use Drupal\indexing_study\Entity\AisConsensusInterface;
 
 /**
  * Hook implementations for nodes.
@@ -15,7 +16,9 @@ class IndexingStudyNodeHooks {
   #[Hook('preprocess_node')]
   public function preprocessNode(&$variables): void {
     // Attach to all nodes
-    $variables['#attached']['library'][] = 'indexing_study/display';
+    if ($variables['node'] instanceof AisConsensusInterface) {
+      $variables['#attached']['library'][] = 'indexing_study/display';
+    }
   }
 
 }
