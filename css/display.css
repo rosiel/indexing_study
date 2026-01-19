@@ -1,0 +1,11 @@
+
+.paragraph .field:not(:last-child) {
+  margin-block-end: 1.5rem;
+}
+.paragraph .field:last-child {
+  margin-block-end: 3rem;
+}
+
+.paragraph .field:first-child {
+  margin-block-start: 3rem;
+}

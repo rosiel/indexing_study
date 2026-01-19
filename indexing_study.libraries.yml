@@ -8,3 +8,7 @@ indexing_study:
     - core/jquery
     - core/once
     - core/drupal
+display:
+  css:
+    theme:
+      css/display.css: { preprocess: false, weight: 50}
