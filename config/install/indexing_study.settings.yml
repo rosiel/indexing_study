@@ -25,10 +25,12 @@ agreement:
   bundle: 'ais_agreement'
   consensus_field: 'field_ais_consensus'
   document_field: 'field_ais_document'
-agreement_consensus:
-  bundle: 'ais_agreement_consensus'
-  agreement_field: 'field_ais_agreements'
+  agreement_assignment_field: 'field_ais_agreement_assignment'
+agreement_assignment:
+  bundle: 'ais_agreement_assignment'
+  user_field: 'field_ais_reviewer'
   document_field: 'field_ais_document'
+  consensus_field: 'field_ais_consensus'
 feed:
   bundle: 'ais_document_import'
   study_field: 'field_ais_study'

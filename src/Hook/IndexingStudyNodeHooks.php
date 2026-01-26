@@ -4,6 +4,8 @@ namespace Drupal\indexing_study\Hook;
 
 use Drupal\Core\Hook\Attribute\Hook;
 use Drupal\indexing_study\Entity\AisConsensusInterface;
+use Drupal\node\NodeInterface;
+use Exception;
 
 /**
  * Hook implementations for nodes.
@@ -21,4 +23,19 @@ class IndexingStudyNodeHooks {
     }
   }
 
+  /**
+   * Implements hook_ENTITY_TYPE_insert().
+   */
+  #[Hook('node_insert')]
+  public function nodeInsert(NodeInterface $node): void {
+    if ($node instanceof AisConsensusInterface) {
+      $node->generateAgreementAssignments();
+    }
+  }
+  #[Hook('node_update')]
+  public function nodeUpdate(NodeInterface $node): void {
+    if ($node instanceof AisConsensusInterface) {
+      $node->generateAgreementAssignments();
+    }
+  }
 }

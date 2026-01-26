@@ -346,13 +346,14 @@ class IndexingStudyController extends ControllerBase {
       $document_id = $needs_consensus[array_rand($needs_consensus)];
       $document = $this->entityTypeManager()->getStorage('node')->load($document_id);
       $analyses = $document->getAnalyses();
+      $analyses_ids = array_map(fn($a): int =>  $a->id(), $analyses);
 
       return $this->redirect(
         'node.add',
         ['node_type' => $config->get('consensus.bundle')],
         [
           'query' => [
-            'analyses' => Yaml::encode($analyses),
+            'analyses' => Yaml::encode($analyses_ids),
             'document' => $document_id,
             'destination' => Url::fromRoute('indexing_study.consensus', ['study_node' => $study_node->id()])->toString()
           ]

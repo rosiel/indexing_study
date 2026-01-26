@@ -7,13 +7,14 @@ class AisDocument extends AbstractAisNode implements  AisDocumentInterface {
 
   public function getAnalyses(): array
   {
-    $analysis_ids = $this->entityTypeManager()->getStorage('node')->getQuery()
+    $storage = $this->entityTypeManager()->getStorage('node');
+    $analysis_ids = $storage->getQuery()
       ->accessCheck(TRUE)
       ->condition('status', 1)
       ->condition('type', $this->config()->get('subject_analysis.bundle'))
       ->condition($this->config()->get('subject_analysis.document_field'), $this->id())
       ->execute();
-    return $this->intify_array($analysis_ids);
+    return $storage->loadMultiple($analysis_ids);
   }
 
   public function getConsensus(): array
@@ -25,6 +26,32 @@ class AisDocument extends AbstractAisNode implements  AisDocumentInterface {
       ->condition($this->config()->get('consensus.document_field'), $this->id())
       ->execute();
     return $this->intify_array($consensus_ids);
+  }
+
+  public function getAgreementAssignments(): array {
+    $storage = $this->entityTypeManager()->getStorage('node');
+    $agreement_ids = $storage->getQuery()
+      ->accessCheck(TRUE)
+      ->condition('status', 1)
+      ->condition('type', $this->config()->get('agreement_assignment.bundle'))
+      ->condition($this->config()->get('agreement_assignment.document_field'), $this->id())
+      ->execute();
+    return $storage->loadMultiple($agreement_ids);
+  }
+
+  public function getAgreements(): array {
+    $storage = $this->entityTypeManager()->getStorage('node');
+    $agreement_ids = $storage->getQuery()
+      ->accessCheck(TRUE)
+      ->condition('status', 1)
+      ->condition('type', $this->config()->get('agreement.bundle'))
+      ->condition($this->config()->get('agreement.document_field'), $this->id())
+      ->execute();
+    return $storage->loadMultiple($agreement_ids);
+  }
+
+  public function getStudy(): AisStudyInterface {
+    return $this->get($this->config()->get('document.study_field'))->referencedEntities()[0];
   }
 
   /**
@@ -92,12 +119,9 @@ class AisDocument extends AbstractAisNode implements  AisDocumentInterface {
   public function createAssignment($userId): int|NULL {
     $user = $this->entityTypeManager()->getStorage('user')->load($userId);
     // Test if user is a member of the document's study.
-    // TODO: Make these get methods on the document and study.
-    $studies = $this->get($this->config->get('document.study_field'))->getValue();
-    $study_id = $studies[0]['target_id'];
-    $study = $this->entityTypeManager()->getStorage('node')->load($study_id);
-    $users_in_study = array_column($study->get($this->config->get('study.reviewers_field'))->getValue(), 'target_id');
-    if (!in_array($user->id(), $users_in_study)) {
+    $study = $this->getStudy();
+    $users_in_study = $study->getReviewers();
+    if (!in_array($user, $users_in_study)) {
       //$this->logger()->error("User " . $user->getAccountName() . " must be a member of the document's study.");
       return NULL;
     }

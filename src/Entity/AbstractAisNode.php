@@ -55,4 +55,9 @@ class AbstractAisNode extends Node
       }
     }
   }
+
+  public static function compare_ids(object $obj1, object $obj2): int {
+    return $obj1->id() <=> $obj2->id();
+  }
+
 }

@@ -86,6 +86,9 @@ interface AisStudyInterface extends AbstractAisNodeInterface {
 
   public function createAssignments(array $reviewers): bool;
 
+  /**
+   * @return array of user objects.
+   */
   public function getReviewers(): array;
 
 

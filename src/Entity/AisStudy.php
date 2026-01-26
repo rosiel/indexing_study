@@ -305,15 +305,14 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
     return True;
   }
 
-  public function getReviewers(): array
-  {
+  public function getReviewers(): array {
     return $this->get($this->config()->get('study.reviewers_field'))->referencedEntities();
   }
 
   protected function getSubjectAnalyses(): array {
       $analyses = \Drupal::entityQuery('node')
-          ->condition('type', $this->config->get('subject_analysis.bundle'))
-         ->condition($this->config->get('assignment.document_field') . '.entity:node.' . $this->config->get('document.study_field'), $this->id())
+        ->condition('type', $this->config->get('subject_analysis.bundle'))
+        ->condition($this->config->get('assignment.document_field') . '.entity:node.' . $this->config->get('document.study_field'), $this->id())
         ->accessCheck(TRUE)
         ->execute();
     return $this->entityTypeManager()->getStorage('node')->loadMultiple($analyses);

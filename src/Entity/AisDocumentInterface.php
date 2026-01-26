@@ -8,18 +8,39 @@ interface AisDocumentInterface extends AbstractAisNodeInterface {
 
 
   /**
-   * Return the document's associated analyses.
+   * Return the document's associated analyses as objects.
    *
    * @return array
    */
   public function getAnalyses(): array;
 
   /**
-   * Return the total number of active documents in the study.
+   * Return the associated Consensus node IDs.
    *
    * @return array
    */
   public function getConsensus(): array;
+
+  /**
+   * Return the associated Agreement Assignments as objects.
+   *
+   * @return array
+   */
+  public function getAgreementAssignments(): array;
+
+  /**
+   * Return the associated Agreements as objects.
+   *
+   * @return array
+   */
+  public function getAgreements(): array;
+
+  /**
+   * Return the associated study.
+   *
+   * @return AisStudyInterface
+   */
+  public function getStudy(): AisStudyInterface;
 
   /**
    * List of user IDs who are or were assigned to this document.
