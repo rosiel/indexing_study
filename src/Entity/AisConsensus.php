@@ -10,8 +10,8 @@ class AisConsensus extends AbstractAisNode implements AisConsensusInterface
 {
   public function getDependents(): array
   {
-    return $this->computeDependents($this->config->get('agreement.bundle'),
-      $this->config->get('agreement.consensus_field'));
+    return $this->computeDependents($this->config->get('agreement_assignment.bundle'),
+      $this->config->get('agreement_assignment.consensus_field'));
   }
 
   public function getDocument(): AisDocumentInterface {
@@ -59,7 +59,7 @@ class AisConsensus extends AbstractAisNode implements AisConsensusInterface
       // Get reviewers on agreement assignments, and remove from potential reviewers.
       $agreement_assignments = $document->getAgreementAssignments(); # Related published agreement assignments objects..
       foreach ($agreement_assignments as $assignment) {
-        if (($key = array_search($assignment->getUser(), $potential_reviewers)) !== false) {
+        if (($key = array_search($assignment->getUser(), $potential_reviewers, TRUE)) !== false) {
           unset($potential_reviewers[$key]);
         }
       }
@@ -70,7 +70,7 @@ class AisConsensus extends AbstractAisNode implements AisConsensusInterface
       // See if we can pull from "ideal reviewers" who haven't authored analyses.
       $analyses = $document->getAnalyses();
       $analysis_authors = array_map(fn($a): UserInterface => $a->getOwner(), $analyses );
-      $ideal_reviewers = array_udiff($potential_reviewers, $analysis_authors, array($this, 'compare_ids'));
+      $ideal_reviewers = array_udiff($potential_reviewers, $analysis_authors, [self::class, 'compare_ids']);
       if (count($ideal_reviewers) >= 1) {
         $potential_reviewers = $ideal_reviewers;
       }

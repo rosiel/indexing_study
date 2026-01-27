@@ -10,4 +10,8 @@ interface AisAgreementAssignmentInterface extends AbstractAisNodeInterface
   public function isComplete(): bool;
 
   public function getUser(): User;
+
+  public function getDocument(): AisDocumentInterface;
+
+  public function getConsensus(): AisConsensusInterface;
 }

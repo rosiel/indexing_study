@@ -26,11 +26,17 @@ agreement:
   consensus_field: 'field_ais_consensus'
   document_field: 'field_ais_document'
   agreement_assignment_field: 'field_ais_agreement_assignment'
+  consensus_subjects_represented: 'field_ais_agreement'
 agreement_assignment:
   bundle: 'ais_agreement_assignment'
   user_field: 'field_ais_reviewer'
   document_field: 'field_ais_document'
   consensus_field: 'field_ais_consensus'
+conclusion:
+  bundle: 'ais_conclusion'
+  document_field: 'field_ais_document'
+  agreement_field: 'field_ais_agreements'
+  agreement_agreement_field: 'field_agreement_agreement'
 feed:
   bundle: 'ais_document_import'
   study_field: 'field_ais_study'

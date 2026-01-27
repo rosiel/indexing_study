@@ -1,0 +1,7 @@
+{% for item in items %}
+  {% if loop.last %}
+    {{ item.content }}
+  {% else %}
+    {{ item.content }},
+  {% endif %}
+{% endfor %}

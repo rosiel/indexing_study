@@ -3,6 +3,7 @@
 namespace Drupal\indexing_study\Entity;
 
 use Drupal\user\Entity\User;
+use Drupal\user\UserInterface;
 
 interface AisStudyInterface extends AbstractAisNodeInterface {
 
@@ -46,7 +47,7 @@ interface AisStudyInterface extends AbstractAisNodeInterface {
    *
    * @return array
    */
-  public function getAssignmentIdsForAnalysisByUser(User $user = NULL): array;
+  public function getAssignmentIdsForAnalysisByUser(UserInterface $user = NULL): array;
 
   /**
    * Return the ids of documents with the specified number of analyses done.
@@ -72,22 +73,13 @@ interface AisStudyInterface extends AbstractAisNodeInterface {
   public function getDocCountAwaitingConsensus(): int;
 
   public function getDocIdsAwaitingConsensus(): array;
-  /**
-   * Return the number of documents with consensus completed and no agreement.
-   *
-   * @return int
-   */
-
-  public function getDocCountAwaitingAgreement(): int;
-
-  public function getDocIdsAwaitingAgreement(): array;
 
   public function getDocIdsRejected(): array;
 
   public function createAssignments(array $reviewers): bool;
 
   /**
-   * @return array of user objects.
+   * @return array of user objects assigned to this study.
    */
   public function getReviewers(): array;
 

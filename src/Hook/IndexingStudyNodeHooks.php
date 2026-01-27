@@ -3,6 +3,7 @@
 namespace Drupal\indexing_study\Hook;
 
 use Drupal\Core\Hook\Attribute\Hook;
+use Drupal\indexing_study\Entity\AisAgreementInterface;
 use Drupal\indexing_study\Entity\AisConsensusInterface;
 use Drupal\node\NodeInterface;
 use Exception;
@@ -31,11 +32,17 @@ class IndexingStudyNodeHooks {
     if ($node instanceof AisConsensusInterface) {
       $node->generateAgreementAssignments();
     }
+    if ($node instanceof AisAgreementInterface) {
+      $node->generateConclusion();
+    }
   }
   #[Hook('node_update')]
   public function nodeUpdate(NodeInterface $node): void {
     if ($node instanceof AisConsensusInterface) {
       $node->generateAgreementAssignments();
+    }
+    if ($node instanceof AisAgreementInterface) {
+      $node->generateConclusion();
     }
   }
 }

@@ -4,8 +4,10 @@ declare(strict_types=1);
 namespace Drupal\indexing_study\Hook;
 
 use Drupal\Core\Hook\Attribute\Hook;
+use Drupal\indexing_study\Entity\AisAgreement;
 use Drupal\indexing_study\Entity\AisAgreementAssignment;
 use Drupal\indexing_study\Entity\AisAssignment;
+use Drupal\indexing_study\Entity\AisConclusion;
 use Drupal\indexing_study\Entity\AisConsensus;
 use Drupal\indexing_study\Entity\AisStudy;
 use Drupal\indexing_study\Entity\AisDocument;
@@ -36,6 +38,12 @@ class IndexingStudyEntityAlterHooks {
     }
     if (isset($bundles['node'][$config->get('consensus.bundle')])) {
       $bundles['node'][$config->get('consensus.bundle')]['class'] = AisConsensus::class;
+    }
+    if (isset($bundles['node'][$config->get('agreement.bundle')])) {
+      $bundles['node'][$config->get('agreement.bundle')]['class'] = AisAgreement::class;
+    }
+    if (isset($bundles['node'][$config->get('conclusion.bundle')])) {
+      $bundles['node'][$config->get('conclusion.bundle')]['class'] = AisConclusion::class;
     }
   }
 

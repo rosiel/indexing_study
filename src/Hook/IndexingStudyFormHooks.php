@@ -117,6 +117,7 @@ class IndexingStudyFormHooks {
       $form['#after_build'][] = [self::class, 'showDocument'];
       $form[$this->config->get('agreement.document_field')]['#after_build'][] = [self::class, 'setDisabled'];
       $form[$this->config->get('agreement.consensus_field')]['#after_build'][] = [self::class, 'setDisabled'];
+      $form[$this->config->get('agreement.agreement_assignment_field')]['#after_build'][] = [self::class, 'setDisabled'];
     } else if ($form_id == 'feeds_feed_' . $this->config->get('feed.bundle') . '_form') {
       $form[$this->config->get('feed.study_field')]['#after_build'][] = [self::class, 'setDisabled'];
     }

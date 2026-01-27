@@ -32,4 +32,13 @@ class AisAgreementAssignment extends AbstractAisNode implements AisAgreementAssi
   public function getUser(): User {
     return $this->get($this->config()->get('agreement_assignment.user_field'))->referencedEntities()[0];
   }
+
+  public function getDocument(): AisDocumentInterface
+  {
+    return $this->get($this->config()->get('agreement_assignment.document_field'))->referencedEntities()[0];
+  }
+
+  public function getConsensus(): AisConsensusInterface {
+    return $this->get($this->config()->get('agreement_assignment.consensus_field'))->referencedEntities()[0];
+  }
 }

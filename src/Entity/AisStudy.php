@@ -1,7 +1,7 @@
 <?php
 namespace Drupal\indexing_study\Entity;
 
-use Drupal\user\Entity\User;
+use Drupal\user\UserInterface;
 use Exception;
 
 class AisStudy extends AbstractAisNode implements  AisStudyInterface {
@@ -29,12 +29,16 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
     return count($this->getAssignmentIdsForAnalysisByUser());
   }
 
+  public function getAssignmentCountForAgreement(): int {
+    return count($this->getAgreementAssignmentsForUser());
+  }
+
   /**
    * @return array
    * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
    * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
-  public function getAssignmentIdsForAnalysisByUser(User $user = NULL): array {
+  public function getAssignmentIdsForAnalysisByUser(UserInterface $user = NULL): array {
     // We will calculate assignments for analysis by:
     //  * getting this study's subject analyses;
     //  * getting the 'completed' assignment from each subject analysis;
@@ -65,9 +69,6 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
     }
     return $assignment_query->execute();
   }
-
-
-
 
   /**
    * @param \Drupal\node\NodeInterface $study
@@ -104,10 +105,7 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
     $results = $query->execute()->fetchAll();
     return array_column($results, 'document_id');
   }
-
-  /**
-   * {@inheritdoc}
-   */
+  
   public function getDocIdsAwaitingAssignment(): array {
     $docs_rejected = $this->getDocIdsRejected();
     $docs_fully_assigned = $this->getDocIdsFullyAssigned();
@@ -254,28 +252,47 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
   public function getDocCountAwaitingConsensus(): int {
     return count($this->getDocIdsAwaitingConsensus());
   }
-  public function getDocIdsAwaitingAgreement(): array {
-    $config = $this->config();
-    $database = \Drupal::database();
-    $query = $database->select('node', 'doc');
-    $query->addField('doc', 'nid', 'document_id');
-    $query->join('node__' . $this->config->get('consensus.document_field'), 'fadcon',
-      'doc.nid = fadcon.' . $this->config->get('consensus.document_field') . '_target_id');
-    $query->innerJoin('node', 'con', 'con.nid = fadcon.entity_id AND con.type = :contype', [':contype' => $config->get('consensus.bundle')]);
-    $query->join('node__' . $this->config->get('document.study_field') , 'study_field',
-      'study_field.entity_id = doc.nid AND study_field.' . $this->config->get('document.study_field') . '_target_id = :study_id', [':study_id' => $this->id()]);
-    $query->condition('doc.type', $config->get('document.bundle'), '=' );
-    $query->groupBy('doc.nid');
-    $subquery = $database->select('node__' . $this->config->get('agreement.document_field'),'fadag');
-    $subquery->join('node', 'ag', 'ag.nid = fadag.entity_id');
-    $subquery->addField('fadag', $this->config->get('agreement.document_field') . '_target_id', 'document_id');
-    $subquery->condition('ag.type', $config->get('agreement.bundle'), '=');
-    $query->condition('doc.nid', $subquery, 'NOT IN');
-    $results = $query->execute()->fetchAll();
-    return array_column($results, 'document_id');
-  }
-  public function getDocCountAwaitingAgreement(): int {
-    return count($this->getDocIdsAwaitingAgreement());
+
+
+  /**
+   * @return array
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+   */
+  public function getAgreementAssignmentsForUser(UserInterface $user = NULL): array {
+    // We will calculate agreement assignments needing fulfillment by:
+    //  * getting this study's agreement assignments;
+    //  * getting the 'completed' agreement assignments from each agreement;
+    //  * querying for all agreement assignments in this study for the current user that aren't in that set of completed assignments.
+    $agreements = $this->getAgreements();
+    $completed_assignments = [];
+    foreach ($agreements as $agreement) {
+      if ($agreement instanceof AisAgreementInterface) {
+        $completed_assignment = $agreement->getAgreementAssignment();
+        if ($completed_assignment) {
+          if (!(in_array($completed_assignment, $completed_assignments))) {
+            $completed_assignments[] = $completed_assignment->id();
+          }
+        }
+      }
+    }
+    // Get current user if not passed in.
+    if (!$user) {
+      $user = \Drupal::currentUser();
+    }
+    // Get assignments for that user with that study, that aren't in the completed assignments
+    $storage = $this->entityTypeManager()->getStorage('node');
+    $assignment_query = $storage->getQuery()
+      ->condition('type', $this->config()->get('agreement_assignment.bundle'))
+      ->condition($this->config()->get('agreement_assignment.document_field') . '.entity:node.' . $this->config()->get('document.study_field'), $this->id())
+      ->condition($this->config()->get('agreement_assignment.user_field'), $user->id())
+      ->condition('status', 1) // Exclude rejected assignments.
+      ->accessCheck(TRUE);
+    if (count($completed_assignments) > 0) {
+      $assignment_query->condition('nid', $completed_assignments, 'NOT IN');
+    }
+    $assignment_ids = $assignment_query->execute();
+    return $storage->loadMultiple($assignment_ids);
   }
 
   public function createAssignments(array $reviewers): bool
@@ -316,6 +333,17 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
         ->accessCheck(TRUE)
         ->execute();
     return $this->entityTypeManager()->getStorage('node')->loadMultiple($analyses);
+  }
+
+
+  public function getAgreements(): array {
+    $storage = $this->entityTypeManager()->getStorage('node');
+    $agreements = $storage->getQuery()
+      ->condition('type', $this->config->get('agreement.bundle'))
+      ->condition($this->config->get('agreement.document_field') . '.entity:node.' . $this->config->get('document.study_field'), $this->id())
+      ->accessCheck(TRUE)
+      ->execute();
+    return $storage->loadMultiple($agreements);
   }
 
   public function getDependents(): array

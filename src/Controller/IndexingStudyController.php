@@ -7,9 +7,11 @@ use Drupal\Component\Serialization\Yaml;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Url;
 use Drupal\indexing_study\Entity\AisStudyInterface;
+use Drupal\indexing_study\Entity\AisAgreementAssignmentInterface;
 use Drupal\Core\Messenger\MessengerTrait;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Session\AccountInterface;
+use Exception;
 
 /**
  * Testing a controller.
@@ -214,7 +216,7 @@ class IndexingStudyController extends ControllerBase {
     ];
 
     // Build agreement section.
-    $needs_agreement = $study_node->getDocCountAwaitingAgreement();
+    $needs_agreement = $study_node->getAssignmentCountForAgreement();
     $agreement_url = Url::fromRoute('indexing_study.agreement', ['study_node' => $study_node->id()]);
     $manage_agreement_url = Url::fromRoute('view.is_agreements.page_1', ['field_ais_study_target_id' => $study_node->id()]);
     $build['agreement'] = [
@@ -287,7 +289,7 @@ class IndexingStudyController extends ControllerBase {
     return $build;
   }
 
-  protected function disabledButton( $label,  $title) {
+  protected function disabledButton($label,  $title) {
     return [
       '#type'=> 'container',
       '#attributes' => [
@@ -364,24 +366,28 @@ class IndexingStudyController extends ControllerBase {
 
   public function agreement(AisStudyInterface $study_node) {
     $config = $this->config('indexing_study.settings');
-    $needs_agreement = $study_node->getDocIdsAwaitingAgreement();
+    $needs_agreement = $study_node->getAgreementAssignmentsForUser();
     if (count($needs_agreement) < 1) {
       return [
         '#markup' => $this->t('There are no outstanding documents needing agreement in this study. 🥳'),
         '#cache' => ['max-age'=>0]
       ];
     } else {
-      $document_id = $needs_agreement[array_rand($needs_agreement)];
-      $document = $this->entityTypeManager()->getStorage('node')->load($document_id);
-      $consensus_id = $document->getConsensus()[0];
+      $agreement_assignment = $needs_agreement[array_rand($needs_agreement)];
+      if (!$agreement_assignment instanceof AisAgreementAssignmentInterface) {
+        throw new Exception("Entity provided was not an agreement assignment.");
+      }
+      $document = $agreement_assignment->getDocument();
+      $consensus = $agreement_assignment->getConsensus();
 
       return $this->redirect(
         'node.add',
         ['node_type' => $config->get('agreement.bundle')],
         [
           'query' => [
-            'consensus' => $consensus_id,
-            'document' => $document_id,
+            'consensus' => $consensus->id(),
+            'document' => $document->id(),
+            'agreement_assignment' => $agreement_assignment->id(),
             'destination' => Url::fromRoute('indexing_study.agreement', ['study_node' => $study_node->id()])->toString()
           ]
         ]

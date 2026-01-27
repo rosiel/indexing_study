@@ -19,7 +19,33 @@ class IndexingStudyThemeHooks {
         'base hook' => 'node',
         'template' => 'node--document-with-subjects',
       ],
+      'paragraph__subjects' => [
+        'base hook' => 'paragraph',
+        'template' => 'paragraph--subjects'
+      ],
+      'paragraph__subjects_with_antecedents' => [
+        'base hook' => 'paragraph',
+        'template' => 'paragraph--subjects-with-antecedents'
+      ],
+      'field__field_reviewer_2_antecedents__subjects_with_antecedents' => [
+        'base hook' => 'field',
+        'template' => 'field--field-reviewer-antecedents--subjects-with-antecedents'
+      ],
+      'field__field_reviewer_1_antecedents__subjects_with_antecedents' => [
+        'base hook' => 'field',
+        'template' => 'field--field-reviewer-antecedents--subjects-with-antecedents'
+      ],
     ];
   }
 
+  #[Hook('theme_suggestions_field_alter')]
+  function theme_suggestions_field_alter(array &$suggestions, array $variables): void
+  {
+    if (\Drupal::currentUser()->isAuthenticated()) {
+      $suggestions[] = 'node__logged_in';
+    }
+    if ($variables['element']['#view_mode'] != 'full') {
+      $suggestions[] = 'field__' . $variables['element']['#field_name'] . '__' . $variables['element']['#view_mode'];
+    }
+  }
 }
