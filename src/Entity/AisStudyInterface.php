@@ -83,6 +83,7 @@ interface AisStudyInterface extends AbstractAisNodeInterface {
    */
   public function getReviewers(): array;
 
+  public function getAgreementAssignments(): array;
 
 }
 

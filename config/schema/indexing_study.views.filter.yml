@@ -14,6 +14,14 @@ views.filter_value.subject_analysis_count_filter:
   type: views.filter_value.numeric
   label: "Subject Analysis Count filter value"
 
+views.filter.agreement_assignment_count_filter:
+  type: views.filter.numeric
+  label: "Agreement Assignment Count"
+
+views.filter_value.agreement_assignment_count_filter:
+  type: views.filter_value.numeric
+  label: "Agreement Assignment Count filter value"
+
 views.filter.agreement_count_filter:
   type: views.filter.numeric
   label: "Agreement Count"
@@ -29,3 +37,11 @@ views.filter.consensus_count_filter:
 views.filter_value.consensus_count_filter:
   type: views.filter_value.numeric
   label: "Consensus Count filter value"
+
+views.filter.conclusion_count_filter:
+  type: views.filter.numeric
+  label: "Conclusion Count"
+
+views.filter_value.conclusion_count_filter:
+  type: views.filter_value.numeric
+  label: "Conclusion Count filter value"

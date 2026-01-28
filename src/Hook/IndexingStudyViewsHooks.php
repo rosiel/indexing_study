@@ -38,6 +38,19 @@ class IndexingStudyViewsHooks {
         'id' => 'subject_analysis_count_filter',
       ],
     ];
+    $data['node']['agreement_assignment_count'] = [
+      'title' => t('Agreement Assignment Count'),
+      'field' => [
+        'title' => t('Agreement Assignment Count'),
+        'help' => t("Display the number of Agreement Assignments associated with a document."),
+        'id' => 'agreement_assignment_count_field',
+      ],
+      'filter' => [
+        'title' => t('Agreement Assignment Count'),
+        'help' => t("Limit by the number of Agreement Assignments associated with a document"),
+        'id' => 'agreement_assignment_count_filter',
+      ],
+    ];
     $data['node']['agreement_count'] = [
       'title' => t('Agreement Count'),
       'field' => [
@@ -62,6 +75,19 @@ class IndexingStudyViewsHooks {
         'title' => t('Consensus Count'),
         'help' => t("Limit by the number of Consensuses associated with a document"),
         'id' => 'consensus_count_filter',
+      ],
+    ];
+    $data['node']['conclusion_count'] = [
+      'title' => t('Conclusion Count'),
+      'field' => [
+        'title' => t('Conclusion Count'),
+        'help' => t("Display the number of Conclusions associated with a document."),
+        'id' => 'conclusion_count_field',
+      ],
+      'filter' => [
+        'title' => t('Conclusion Count'),
+        'help' => t("Limit by the number of Conclusions associated with a document"),
+        'id' => 'conclusion_count_filter',
       ],
     ];
   }

@@ -9,3 +9,7 @@
 .paragraph .field:first-child {
   margin-block-start: 3rem;
 }
+
+.agreement-assignment-table {
+  border-spacing: 10px;
+}

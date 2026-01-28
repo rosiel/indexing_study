@@ -105,7 +105,7 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
     $results = $query->execute()->fetchAll();
     return array_column($results, 'document_id');
   }
-  
+
   public function getDocIdsAwaitingAssignment(): array {
     $docs_rejected = $this->getDocIdsRejected();
     $docs_fully_assigned = $this->getDocIdsFullyAssigned();
@@ -213,13 +213,14 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
     return array_column($results, 'document_id');
   }
 
-  public function getDocIdsCompleted() {
+  public function getDocIdsCompleted(): array|int
+  {
     $config = $this->config();
     return $this->entityTypeManager()->getStorage('node')->getQuery()
       ->accessCheck(FALSE)
-      ->condition('type',$config->get('agreement.bundle'))
+      ->condition('type',$config->get('conclusion.bundle'))
       ->condition('status',1)
-      ->condition($config->get('agreement.document_field') . '.entity:node.' . $config->get('document.study_field'), $this->id())
+      ->condition($config->get('conclusion.document_field') . '.entity:node.' . $config->get('document.study_field'), $this->id())
       ->execute();
   }
 
@@ -350,5 +351,15 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
   {
     return $this->computeDependents($this->config->get('document.bundle'),
       $this->config->get('document.study_field'));
+  }
+
+  public function getAgreementAssignments(): array {
+    $storage = $this->entityTypeManager()->getStorage('node');
+    $agreements = $storage->getQuery()
+      ->condition('type', $this->config()->get('agreement_assignment.bundle'))
+      ->condition($this->config()->get('agreement_assignment.document_field') . '.entity:node.' . $this->config->get('document.study_field'), $this->id())
+      ->accessCheck(FALSE)
+      ->execute();
+    return $storage->loadMultiple($agreements);
   }
 }

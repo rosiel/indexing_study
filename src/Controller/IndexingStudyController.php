@@ -221,7 +221,7 @@ class IndexingStudyController extends ControllerBase {
     $manage_agreement_url = Url::fromRoute('view.is_agreements.page_1', ['field_ais_study_target_id' => $study_node->id()]);
     $build['agreement'] = [
       '#type' => 'details',
-      '#title' => $this->t("Agreement (@count awaiting agreement)", [
+      '#title' => $this->t("Agreement (@count awaiting your agreement)", [
         '@count' => $needs_agreement
       ]),
     ];
@@ -241,8 +241,9 @@ class IndexingStudyController extends ControllerBase {
       }
     }
     else {
-      $build['agreement']['agreement'] = $this->disabledButton($this->t('Create Agreement'), $this->t('There are no documents awaiting agreement.'));
+      $build['agreement']['agreement'] = $this->disabledButton($this->t('Create Agreement'), $this->t('There are no documents awaiting your agreement.'));
     }
+    $build['agreement']['status'] = $this->agreementStatusTable($study_node);
     $build['agreement']['manage'] = [
       '#type' => 'link',
       '#title' => $this->t('Manage agreements'),
@@ -286,6 +287,7 @@ class IndexingStudyController extends ControllerBase {
       '#access' => $download_results_url->access(),
     ];
     $build['#cache'] = ['max-age' => 0];
+    $build['#attached']['library'][] = 'indexing_study/display';
     return $build;
   }
 
@@ -304,6 +306,43 @@ class IndexingStudyController extends ControllerBase {
     ];
   }
 
+  protected function agreementStatusTable($study_node) {
+    // Get the list of agreement assignments.
+    $names_array = [];
+    $agreement_assignments = $study_node->getAgreementAssignments();
+    // Count the names we're waiting for.
+    foreach($agreement_assignments as $ag_assignment) {
+      if (!$ag_assignment->isComplete()) {
+        $user = $ag_assignment->getUser()->getAccountName();
+        if (isset($names_array[$user])) {
+          $names_array[$user] += 1;
+        } else {
+          $names_array[$user] = 1;
+        }
+      }
+    }
+    $values = [];
+    foreach ($names_array as $name => $count) {
+      $values[] = [
+        'name' => [
+          'data' => [
+            '#markup' => $name,
+          ],
+        ],
+        'count' => [
+          'data' => [
+            '#markup' => $count,
+          ]
+        ]
+      ];
+    }
+    return [
+      '#type' => 'table',
+      '#header' => ['name' => $this->t('Name'), 'count' => $this->t('Incomplete assignments')],
+      '#rows' => $values,
+      '#attributes' => ['class' => ['agreement-assignment-table']],
+    ];
+  }
   /**
    * Returns the response page for the next assignment in a study.
    */
