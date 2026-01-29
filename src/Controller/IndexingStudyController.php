@@ -253,7 +253,7 @@ class IndexingStudyController extends ControllerBase {
 
     // Build results section.
     $result_count = $study_node->getDocCountCompleted();
-    $results_url = Url::fromRoute('view.is_results.page_1', ['node' => $study_node->id()]);
+    $results_url = Url::fromRoute('view.multiagreement_results.page_1', ['node' => $study_node->id()]);
     $build['results'] = [
       '#type' => 'details',
       '#open' => True,
@@ -279,12 +279,21 @@ class IndexingStudyController extends ControllerBase {
     else {
       $build['results']['view'] = $this->disabledButton($this->t('View Results'), $this->t('There are no results to view.'));
     }
-    $download_results_url = Url::fromRoute('view.is_results.data_export_1', ['node' => $study_node->id()]);
+    $download_results_url = Url::fromRoute('view.multiagreement_results.data_export_1', ['node' => $study_node->id()]);
+    $download_results_url_newlines = Url::fromRoute('view.multiagreement_results.data_export_2', ['node' => $study_node->id()]);
     $build['results']['download'] = [
       '#type' => 'link',
-      '#title' => $this->t('Download results'),
+      '#title' => $this->t('Download results (with pipes (|) separating multiple values - for computing)'),
       '#url' => $download_results_url,
       '#access' => $download_results_url->access(),
+      '#prefix' => '<div>',
+      '#suffix' => '</div>',
+    ];
+    $build['results']['download_newlines'] = [
+      '#type' => 'link',
+      '#title' => $this->t('Download results (with newlines separating multiple values - for reading in Excel)'),
+      '#url' => $download_results_url_newlines,
+      '#access' => $download_results_url_newlines->access(),
     ];
     $build['#cache'] = ['max-age' => 0];
     $build['#attached']['library'][] = 'indexing_study/display';
