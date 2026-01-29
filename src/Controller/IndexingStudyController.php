@@ -97,11 +97,17 @@ class IndexingStudyController extends ControllerBase {
     $needs_assignment = $study_node->getDocCountAwaitingAssignment();
     $assignment_url = Url::fromRoute('indexing_study.assign', ['study_node' => $study_node->id()]);
     $manage_assignments_url = Url::fromRoute('view.is_assignments.page_1', ['field_ais_study_target_id' => $study_node->id()]);
+    $count_rejected = count($study_node->getDocIdsRejected());
+
+    if ($needs_assignment > 0) {
+      $title = $this->t("Assignments (@count awaiting assignment, @count_rejected rejected)", ['@count' => $needs_assignment, '@count_rejected' => $count_rejected]);
+    }
+    else {
+      $title = $this->t("Assignments (All documents are assigned, @count_rejected rejected)", ['@count_rejected' => $count_rejected]);
+    }
     $build['assignments'] = [
       '#type' => 'details',
-      '#title' => $this->t("Assignments (@count awaiting assignment)", [
-        '@count' => $needs_assignment
-      ]),
+      '#title' => $title,
     ];
     if ($needs_assignment > 0) {
       if ($assignment_url->access()) {
@@ -129,16 +135,20 @@ class IndexingStudyController extends ControllerBase {
     ];
 
     // Build section for analysis.
-    $needs_analysis = $study_node->getAssignmentCountForAnalysis();
+    $docs_needing_analysis = count($study_node->getDocsAwaitingAnalysis());
+    $assignments_awaiting = count($study_node->getAssignmentsForAnalysis());
+    $needs_analysis_by_user = count($study_node->getAssignmentIdsForAnalysisByUser());
     $analysis_url = Url::fromRoute('indexing_study.analyze', ['study_node' => $study_node->id()]);
     $manage_analyses_url = Url::fromRoute('view.is_reviews.page_1', ['field_ais_study_target_id' => $study_node->id()]);
     $build['analysis'] = [
       '#type' => 'details',
-      '#title' => $this->t("Analysis (@count awaiting your subject analysis)", [
-        '@count' => $needs_analysis
+      '#title' => $this->t("Analysis (@count_docs documents awaiting @count_awaiting subject analyses; @count_user are waiting for you)", [
+        '@count_user' => $needs_analysis_by_user,
+        '@count_docs' => $docs_needing_analysis,
+        '@count_awaiting' => $assignments_awaiting,
       ]),
     ];
-    if ($needs_analysis > 0) {
+    if ($needs_analysis_by_user > 0) {
       if ($analysis_url->access()) {
         $build['analysis']['analyze'] = [
           '#type' => 'link',
@@ -216,16 +226,20 @@ class IndexingStudyController extends ControllerBase {
     ];
 
     // Build agreement section.
-    $needs_agreement = $study_node->getAssignmentCountForAgreement();
+    $agreement_assignments_awaiting = count($study_node->getAgreementAssignmentsAwaiting());
+    $docs_awaiting = count($study_node->getDocsAwaitingAgreement());
+    $needs_user = $study_node->getAssignmentCountForAgreement();
     $agreement_url = Url::fromRoute('indexing_study.agreement', ['study_node' => $study_node->id()]);
     $manage_agreement_url = Url::fromRoute('view.is_agreements.page_1', ['field_ais_study_target_id' => $study_node->id()]);
     $build['agreement'] = [
       '#type' => 'details',
-      '#title' => $this->t("Agreement (@count awaiting your agreement)", [
-        '@count' => $needs_agreement
+      '#title' => $this->t("Agreement (@count_docs documents awaiting @count_assignment agreements; @count are waiting for you)", [
+        '@count' => $needs_user,
+        '@count_assignment' => $agreement_assignments_awaiting,
+        '@count_docs' => $docs_awaiting
       ]),
     ];
-    if ($needs_agreement > 0) {
+    if ($needs_user > 0) {
       if ($agreement_url->access()) {
         $build['agreement']['agreement'] = [
           '#type' => 'link',
@@ -321,7 +335,7 @@ class IndexingStudyController extends ControllerBase {
     $agreement_assignments = $study_node->getAgreementAssignments();
     // Count the names we're waiting for.
     foreach($agreement_assignments as $ag_assignment) {
-      if (!$ag_assignment->isComplete()) {
+      if (!$ag_assignment->isCompleted()) {
         $user = $ag_assignment->getUser()->getAccountName();
         if (isset($names_array[$user])) {
           $names_array[$user] += 1;

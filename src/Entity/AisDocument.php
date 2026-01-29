@@ -121,7 +121,7 @@ class AisDocument extends AbstractAisNode implements  AisDocumentInterface {
     // Test if user is a member of the document's study.
     $study = $this->getStudy();
     $users_in_study = $study->getReviewers();
-    if (!in_array($user, $users_in_study)) {
+    if (!in_array($user, $users_in_study, TRUE)) {
       //$this->logger()->error("User " . $user->getAccountName() . " must be a member of the document's study.");
       return NULL;
     }

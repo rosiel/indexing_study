@@ -13,7 +13,7 @@ class AisAgreementAssignment extends AbstractAisNode implements AisAgreementAssi
       $this->config->get('agreement.agreement_assignment_field'));
   }
 
-  public function isComplete(): bool
+  public function isCompleted(): bool
   {
     // There exists an Agreement that has this assignment linked.
     $agreement_ids = $this->entityTypeManager()->getStorage('node')->getQuery()

@@ -7,7 +7,7 @@ use Drupal\user\Entity\User;
 
 interface AisAgreementAssignmentInterface extends AbstractAisNodeInterface
 {
-  public function isComplete(): bool;
+  public function isCompleted(): bool;
 
   public function getUser(): User;
 

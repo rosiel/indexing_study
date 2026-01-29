@@ -33,6 +33,18 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
     return count($this->getAgreementAssignmentsForUser());
   }
 
+  public function getAssignmentsForAnalysis(): array {
+    $assignments = $this->getAssignments();
+    return array_filter($assignments, fn($a) => !$a->isCompleted());
+  }
+
+  public function getDocsAwaitingAnalysis(): array {
+    // Find all assignments that are not completed. Get their docs.
+    $assignments = $this->getAssignmentsForAnalysis();
+    $docs = array_map(fn($a) => $a->getDocument(), $assignments);
+    return array_unique($docs, SORT_REGULAR);
+  }
+
   /**
    * @return array
    * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
@@ -327,10 +339,19 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
     return $this->get($this->config()->get('study.reviewers_field'))->referencedEntities();
   }
 
+  protected function getAssignments(): array {
+    $analyses = \Drupal::entityQuery('node')
+      ->condition('type', $this->config->get('assignment.bundle'))
+      ->condition($this->config->get('assignment.document_field') . '.entity:node.' . $this->config->get('document.study_field'), $this->id())
+      ->accessCheck(TRUE)
+      ->execute();
+    return $this->entityTypeManager()->getStorage('node')->loadMultiple($analyses);
+  }
+
   protected function getSubjectAnalyses(): array {
       $analyses = \Drupal::entityQuery('node')
         ->condition('type', $this->config->get('subject_analysis.bundle'))
-        ->condition($this->config->get('assignment.document_field') . '.entity:node.' . $this->config->get('document.study_field'), $this->id())
+        ->condition($this->config->get('subject_analysis.document_field') . '.entity:node.' . $this->config->get('document.study_field'), $this->id())
         ->accessCheck(TRUE)
         ->execute();
     return $this->entityTypeManager()->getStorage('node')->loadMultiple($analyses);
@@ -355,11 +376,23 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
 
   public function getAgreementAssignments(): array {
     $storage = $this->entityTypeManager()->getStorage('node');
-    $agreements = $storage->getQuery()
+    $agreement_assignments = $storage->getQuery()
       ->condition('type', $this->config()->get('agreement_assignment.bundle'))
       ->condition($this->config()->get('agreement_assignment.document_field') . '.entity:node.' . $this->config->get('document.study_field'), $this->id())
       ->accessCheck(FALSE)
       ->execute();
-    return $storage->loadMultiple($agreements);
+    return $storage->loadMultiple($agreement_assignments);
+  }
+
+  public function getAgreementAssignmentsAwaiting(): array {
+    $agreement_assignments = $this->getAgreementAssignments();
+    return array_filter($agreement_assignments, fn($a) => !$a->isCompleted());
+  }
+
+  public function getDocsAwaitingAgreement(): array {
+    $agreement_assignments_awaiting = $this->getAgreementAssignmentsAwaiting();
+    $docs = array_map(fn($a) => $a->getDocument(), $agreement_assignments_awaiting);
+    return array_unique($docs, SORT_REGULAR);
   }
 }
+

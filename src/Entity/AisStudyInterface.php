@@ -65,6 +65,12 @@ interface AisStudyInterface extends AbstractAisNodeInterface {
    */
   public function getDocIdsAwaitingAssignment(): array;
 
+  public function getAssignmentsForAnalysis(): array;
+
+  public function getAgreementAssignmentsAwaiting(): array;
+
+  public function getDocsAwaitingAgreement(): array;
+
   /**
    * Return the number of documents with analysis completed and no consensus.
    *
