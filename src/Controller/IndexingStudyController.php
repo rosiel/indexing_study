@@ -364,6 +364,7 @@ class IndexingStudyController extends ControllerBase {
       '#header' => ['name' => $this->t('Name'), 'count' => $this->t('Incomplete assignments')],
       '#rows' => $values,
       '#attributes' => ['class' => ['agreement-assignment-table']],
+      '#empty' => $this->t("There are no incomplete agreement assignments."),
     ];
   }
   /**

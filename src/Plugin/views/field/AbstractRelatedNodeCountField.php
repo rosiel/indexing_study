@@ -56,4 +56,9 @@ class AbstractRelatedNodeCountField extends FieldPluginBase {
     // In Drupal 11, count() returns int directly
     return $query->count()->execute();
   }
+
+  public function clickSortable()
+  {
+    return FALSE;
+  }
 }

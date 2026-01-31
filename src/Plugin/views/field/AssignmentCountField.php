@@ -18,5 +18,4 @@ class AssignmentCountField extends AbstractRelatedNodeCountField {
     // Do nothing - we're computing the value in parent::render().
   }
 
-
 }
