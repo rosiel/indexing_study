@@ -35,7 +35,8 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
 
   public function getAssignmentsForAnalysis(): array {
     $assignments = $this->getAssignments();
-    return array_filter($assignments, fn($a) => !$a->isCompleted());
+    $active_assignments = array_filter($assignments, fn($a) => $a->status);
+    return array_filter($active_assignments, fn($a) => !$a->isCompleted());
   }
 
   public function getDocsAwaitingAnalysis(): array {
