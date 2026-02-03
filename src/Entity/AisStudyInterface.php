@@ -40,7 +40,7 @@ interface AisStudyInterface extends AbstractAisNodeInterface {
    *
    * @return int
    */
-  public function getAssignmentCountForAnalysis(): int;
+  public function getAssignmentCountForAnalysisByUser(): int;
 
   /**
    * Return the IDs of assignment ready for analysis by the current user.

@@ -1,6 +1,8 @@
 <?php
 namespace Drupal\indexing_study\Entity;
 
+use Drupal\node\Entity\Node;
+use Drupal\node\NodeInterface;
 use Drupal\user\UserInterface;
 use Exception;
 
@@ -25,7 +27,7 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
   /**
    * {@inheritdoc}
    */
-  public function getAssignmentCountForAnalysis(): int {
+  public function getAssignmentCountForAnalysisByUser(): int {
     return count($this->getAssignmentIdsForAnalysisByUser());
   }
 
@@ -35,7 +37,7 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
 
   public function getAssignmentsForAnalysis(): array {
     $assignments = $this->getAssignments();
-    $active_assignments = array_filter($assignments, fn($a) => $a->status);
+    $active_assignments = array_filter($assignments, fn($a) => $a->status == NodeInterface::PUBLISHED);
     return array_filter($active_assignments, fn($a) => !$a->isCompleted());
   }
 
@@ -134,6 +136,7 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
     $docs_all = $this->getDocIdsAll();
     return array_diff($docs_all, $docs_rejected, $docs_fully_assigned);
   }
+
 
   public function getDocIdsFullyAssigned() {
     $config = $this->config();
