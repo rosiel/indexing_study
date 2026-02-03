@@ -45,6 +45,15 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
     return array_unique($docs, SORT_REGULAR);
   }
 
+  public function getConsensuses(): array {
+    $storage = $this->entityTypeManager()->getStorage('node');
+    $query = $storage->getQuery()
+      ->accessCheck(FALSE)
+      ->condition('type', $this->config()->get('consensus.bundle'))
+      ->condition($this->config()->get('consensus.document_field') . '.entity:node.' . $this->config()->get('document.study_field'), $this->id())
+      ->execute();
+    return $storage->loadMultiple($query);
+  }
   /**
    * @return array
    * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException

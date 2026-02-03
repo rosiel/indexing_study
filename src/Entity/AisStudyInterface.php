@@ -67,6 +67,8 @@ interface AisStudyInterface extends AbstractAisNodeInterface {
 
   public function getAssignmentsForAnalysis(): array;
 
+  public function getConsensuses(): array;
+
   public function getAgreementAssignmentsAwaiting(): array;
 
   public function getDocsAwaitingAgreement(): array;

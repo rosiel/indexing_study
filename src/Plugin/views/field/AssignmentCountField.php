@@ -14,6 +14,7 @@ class AssignmentCountField extends AbstractRelatedNodeCountField {
     $this->relating_field = $this->config->get('assignment.document_field');
     $this->root_node_type = $this->config->get('document.bundle');
   }
+
   public function query() {
     // Do nothing - we're computing the value in parent::render().
   }

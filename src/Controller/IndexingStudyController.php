@@ -47,9 +47,10 @@ class IndexingStudyController extends ControllerBase {
     $build['#title'] = $study_node->getTitle();
 
     // Build the study summary section.
+    $title = $this->t("Study details");
     $build['study'] = [
       '#type' => 'details',
-      '#title' => $this->t("Study details")
+      '#title' => $this->titleTag($title),
     ];
     $build['study']['study_node'] = $this->entityTypeManager()
       ->getViewBuilder('node')
@@ -70,11 +71,12 @@ class IndexingStudyController extends ControllerBase {
       'study' => $study_node->id(),
       'destination' => Url::fromRoute('indexing_study.study', ['study_node' => $study_node->id()])->toString()
     ]);
+    $title = $this->t("Documents (@count in study)", [
+      '@count' => $study_node->getDocCount()
+    ]);
     $build['documents'] = [
       '#type' => 'details',
-      '#title' => $this->t("Documents (@count in study)", [
-        '@count' => $study_node->getDocCount()
-      ]),
+      '#title' => $this->titleTag($title),
       'ingest' => [
         '#type' => 'link',
         '#title' => $this->t('Import'),
@@ -107,7 +109,7 @@ class IndexingStudyController extends ControllerBase {
     }
     $build['assignments'] = [
       '#type' => 'details',
-      '#title' => $title,
+      '#title' => $this->titleTag($title),
     ];
     if ($needs_assignment > 0) {
       if ($assignment_url->access()) {
@@ -140,13 +142,14 @@ class IndexingStudyController extends ControllerBase {
     $needs_analysis_by_user = count($study_node->getAssignmentIdsForAnalysisByUser());
     $analysis_url = Url::fromRoute('indexing_study.analyze', ['study_node' => $study_node->id()]);
     $manage_analyses_url = Url::fromRoute('view.is_reviews.page_1', ['field_ais_study_target_id' => $study_node->id()]);
+    $title = $this->t("Analysis (@count_docs documents awaiting @count_awaiting subject analyses; @count_user are waiting for you)", [
+      '@count_user' => $needs_analysis_by_user,
+      '@count_docs' => $docs_needing_analysis,
+      '@count_awaiting' => $assignments_awaiting,
+    ]);
     $build['analysis'] = [
       '#type' => 'details',
-      '#title' => $this->t("Analysis (@count_docs documents awaiting @count_awaiting subject analyses; @count_user are waiting for you)", [
-        '@count_user' => $needs_analysis_by_user,
-        '@count_docs' => $docs_needing_analysis,
-        '@count_awaiting' => $assignments_awaiting,
-      ]),
+      '#title' => $this->titleTag($title),
     ];
     if ($needs_analysis_by_user > 0) {
       if ($analysis_url->access()) {
@@ -193,12 +196,12 @@ class IndexingStudyController extends ControllerBase {
     $needs_consensus = $study_node->getDocCountAwaitingConsensus();
     $consensus_url = Url::fromRoute('indexing_study.consensus', ['study_node' => $study_node->id()]);
     $manage_consensus_url = Url::fromRoute('view.is_consensus.page_1', ['field_ais_study_target_id' => $study_node->id()]);
-
+    $title = $this->t("Consensus (@count awaiting consensus)", [
+      '@count' => $needs_consensus
+    ]);
     $build['consensus'] = [
       '#type' => 'details',
-      '#title' => $this->t("Consensus (@count awaiting consensus)", [
-        '@count' => $needs_consensus
-      ]),
+      '#title' => $this->titleTag($title),
     ];
     if ($needs_consensus > 0) {
       if ($consensus_url->access()) {
@@ -231,13 +234,14 @@ class IndexingStudyController extends ControllerBase {
     $needs_user = $study_node->getAssignmentCountForAgreement();
     $agreement_url = Url::fromRoute('indexing_study.agreement', ['study_node' => $study_node->id()]);
     $manage_agreement_url = Url::fromRoute('view.is_agreements.page_1', ['field_ais_study_target_id' => $study_node->id()]);
+    $title = $this->t("Agreement (@count_docs documents awaiting @count_assignment agreements; @count are waiting for you)", [
+      '@count' => $needs_user,
+      '@count_assignment' => $agreement_assignments_awaiting,
+      '@count_docs' => $docs_awaiting
+    ]);
     $build['agreement'] = [
       '#type' => 'details',
-      '#title' => $this->t("Agreement (@count_docs documents awaiting @count_assignment agreements; @count are waiting for you)", [
-        '@count' => $needs_user,
-        '@count_assignment' => $agreement_assignments_awaiting,
-        '@count_docs' => $docs_awaiting
-      ]),
+      '#title' => $this->titleTag($title),
     ];
     if ($needs_user > 0) {
       if ($agreement_url->access()) {
@@ -268,12 +272,13 @@ class IndexingStudyController extends ControllerBase {
     // Build results section.
     $result_count = $study_node->getDocCountCompleted();
     $results_url = Url::fromRoute('view.multiagreement_results.page_1', ['node' => $study_node->id()]);
+    $title = $this->t("Results (@count completed)", [
+      '@count' => $result_count
+    ]);
     $build['results'] = [
       '#type' => 'details',
       '#open' => True,
-      '#title' => $this->t("Results (@count completed)", [
-        '@count' => $result_count
-      ]),
+      '#title' => $this->titleTag($title),
     ];
     if ($result_count > 0) {
       if ($results_url->access()) {
@@ -295,12 +300,13 @@ class IndexingStudyController extends ControllerBase {
     }
     $download_results_url = Url::fromRoute('view.multiagreement_results.data_export_1', ['node' => $study_node->id()]);
     $download_results_url_newlines = Url::fromRoute('view.multiagreement_results.data_export_2', ['node' => $study_node->id()]);
+    $download_results_url_consensus = Url::fromRoute('view.subject_analysis_consensus.data_export_1', ['field_ais_study_target_id' => $study_node->id()]);
     $build['results']['download'] = [
       '#type' => 'link',
       '#title' => $this->t('Download results (with pipes (|) separating multiple values - for computing)'),
       '#url' => $download_results_url,
       '#access' => $download_results_url->access(),
-      '#prefix' => '<div>',
+      '#prefix' => '<div><h3>Results by document:</h3><br/>',
       '#suffix' => '</div>',
     ];
     $build['results']['download_newlines'] = [
@@ -308,6 +314,37 @@ class IndexingStudyController extends ControllerBase {
       '#title' => $this->t('Download results (with newlines separating multiple values - for reading in Excel)'),
       '#url' => $download_results_url_newlines,
       '#access' => $download_results_url_newlines->access(),
+      '#prefix' => '<div>',
+      '#suffix' => '</div>',
+    ];
+    // Build Consensus Results section
+    $result_count = count($study_node->getConsensuses());
+    $results_url = Url::fromRoute('view.subject_analysis_consensus.page_1', ['field_ais_study_target_id' => $study_node->id()]);
+    if ($result_count > 0) {
+      if ($results_url->access()) {
+        $build['results']['view_consensus'] = [
+          '#type' => 'link',
+          '#title' => $this->t('View Consensus Terms'),
+          '#url' => $results_url,
+          '#attributes' => [
+            'class' => ['button', 'button--primary'],
+          ],
+        ];
+      }
+      else {
+        $build['results']['view'] = $this->disabledButton($this->t('View Results'), $this->t('You do not have permission to view consensuses.'));
+      }
+    }
+    else {
+      $build['results']['view'] = $this->disabledButton($this->t('View Results'), $this->t('There are no consensuses to view.'));
+    }
+    $build['results']['download_consensus'] = [
+      '#type' => 'link',
+      '#title' => $this->t('Download Consensus Terms and their antecedents'),
+      '#url' => $download_results_url_consensus,
+      '#access' => $download_results_url_consensus->access(),
+      '#prefix' => '<div><h3>Consensus details:</h3><br/>',
+      '#suffix' => '</div>',
     ];
     $build['#cache'] = ['max-age' => 0];
     $build['#attached']['library'][] = 'indexing_study/display';
@@ -328,7 +365,17 @@ class IndexingStudyController extends ControllerBase {
       ]
     ];
   }
-
+  protected function titleTag($title) {
+    return [
+      '#type' => 'html_tag',
+      '#tag' => 'span',
+      '#value' => $title,
+      '#attributes' => [
+        'role' => 'heading',
+        'aria-level' => '2',
+      ],
+    ];
+  }
   protected function agreementStatusTable($study_node) {
     // Get the list of agreement assignments.
     $names_array = [];
