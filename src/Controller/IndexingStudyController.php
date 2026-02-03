@@ -306,7 +306,7 @@ class IndexingStudyController extends ControllerBase {
       '#title' => $this->t('Download results (with pipes (|) separating multiple values - for computing)'),
       '#url' => $download_results_url,
       '#access' => $download_results_url->access(),
-      '#prefix' => '<div><h3>Results by document:</h3><br/>',
+      '#prefix' => '<div>',
       '#suffix' => '</div>',
     ];
     $build['results']['download_newlines'] = [
@@ -343,7 +343,7 @@ class IndexingStudyController extends ControllerBase {
       '#title' => $this->t('Download Consensus Terms and their antecedents'),
       '#url' => $download_results_url_consensus,
       '#access' => $download_results_url_consensus->access(),
-      '#prefix' => '<div><h3>Consensus details:</h3><br/>',
+      '#prefix' => '<div>',
       '#suffix' => '</div>',
     ];
     $build['#cache'] = ['max-age' => 0];
