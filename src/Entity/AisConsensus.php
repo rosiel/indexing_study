@@ -52,7 +52,7 @@ class AisConsensus extends AbstractAisNode implements AisConsensusInterface
       $document = $this->getDocument();
       $existing_agreements = $document->getAgreements(); # Related published agreements as objects
       foreach ($existing_agreements as $agreement) {
-        if (($key = array_search($agreement->getOwner(), $potential_reviewers)) !== false) {
+        if (($key = array_search($agreement->getOwner(), $potential_reviewers, TRUE)) !== false) {
           unset($potential_reviewers[$key]);
         }
       }
