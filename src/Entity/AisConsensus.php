@@ -32,7 +32,7 @@ class AisConsensus extends AbstractAisNode implements AisConsensusInterface
     $agreement_assignments = $document->getAgreementAssignments(); # Related published agreements objects.
     $unfinished_assignment_count = 0;
     foreach ($agreement_assignments as $assignment) {
-      if (!$assignment->isComplete()) {
+      if (!$assignment->isCompleted()) {
         $unfinished_assignment_count++;
       }
     }
