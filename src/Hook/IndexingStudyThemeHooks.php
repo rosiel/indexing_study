@@ -41,9 +41,6 @@ class IndexingStudyThemeHooks {
   #[Hook('theme_suggestions_field_alter')]
   function theme_suggestions_field_alter(array &$suggestions, array $variables): void
   {
-    if (\Drupal::currentUser()->isAuthenticated()) {
-      $suggestions[] = 'node__logged_in';
-    }
     if ($variables['element']['#view_mode'] != 'full') {
       $suggestions[] = 'field__' . $variables['element']['#field_name'] . '__' . $variables['element']['#view_mode'];
     }
