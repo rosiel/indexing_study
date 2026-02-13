@@ -19,7 +19,7 @@ interface AisDocumentInterface extends AbstractAisNodeInterface {
    *
    * @return array
    */
-  public function getConsensus(): array;
+  public function getConsensus(): AisConsensusInterface;
 
   /**
    * Return the associated Agreement Assignments as objects.

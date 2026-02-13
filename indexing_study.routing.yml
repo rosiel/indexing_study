@@ -60,3 +60,16 @@ indexing_study.agreement:
       study_node:
         type: entity:node
     no-cache: 'TRUE'
+indexing_study.conclusion:
+  path: '/study/{study_node}/conclusion'
+  defaults:
+    _controller: '\Drupal\indexing_study\Controller\IndexingStudyController::conclusion'
+    _title: 'Create Conclusion'
+  requirements:
+    _permission: 'create conclusion'
+    _custom_access: '\Drupal\indexing_study\Controller\IndexingStudyController::access'
+  options:
+    parameters:
+      study_node:
+        type: entity:node
+    no-cache: 'TRUE'

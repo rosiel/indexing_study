@@ -32,17 +32,11 @@ class IndexingStudyNodeHooks {
     if ($node instanceof AisConsensusInterface) {
       $node->generateAgreementAssignments();
     }
-    if ($node instanceof AisAgreementInterface) {
-      $node->generateConclusion();
-    }
   }
   #[Hook('node_update')]
   public function nodeUpdate(NodeInterface $node): void {
     if ($node instanceof AisConsensusInterface) {
       $node->generateAgreementAssignments();
-    }
-    if ($node instanceof AisAgreementInterface) {
-      $node->generateConclusion();
     }
   }
 }

@@ -348,6 +348,32 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
     return True;
   }
 
+  public function getDocIdsAwaitingConclusion(): array
+  {
+    $config = $this->config();
+    $database = \Drupal::database();
+    $query = $database->select('node', 'doc');
+    $query->addField('doc', 'nid', 'document_id');
+    $query->addExpression('COUNT(ag.nid)', 'agreement_count');
+    $query->join('node__' . $this->config->get('agreement.document_field'), 'fadag',
+      'doc.nid = fadag.' . $this->config->get('agreement.document_field') . '_target_id');
+    $query->join('node', 'ag', 'ag.nid = fadag.entity_id AND ag.type = :agtype', [
+      ':agtype' => $config->get('agreement.bundle')]);
+    $query->join('node__' . $this->config->get('document.study_field'), 'study_field',
+      'study_field.entity_id = doc.nid AND study_field.' . $this->config->get('document.study_field') . '_target_id = :study_id', [
+        ':study_id' => $this->id()]);
+    $query->condition('doc.type', $config->get('document.bundle'), '=' );
+    $query->groupBy('doc.nid');
+    $query->having('agreement_count >= :limit', [':limit' => 2]);
+    $subquery = $database->select('node__' . $this->config->get('conclusion.document_field'),'fadc');
+    $subquery->join('node', 'con', 'con.nid = fadc.entity_id');
+    $subquery->addField('fadc', $this->config->get('conclusion.document_field') . '_target_id', 'document_id');
+    $subquery->condition('con.type', $config->get('conclusion.bundle'), '=');
+    $query->condition('doc.nid', $subquery, 'NOT IN');
+    $results = $query->execute()->fetchAll();
+    return array_column($results, 'document_id');
+  }
+
   public function getReviewers(): array {
     return $this->get($this->config()->get('study.reviewers_field'))->referencedEntities();
   }

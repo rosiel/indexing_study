@@ -13,3 +13,6 @@ create consensus:
 create agreement:
   title: 'Create agreement'
   description: 'Create agreement between consensus and assigned terms. Must also have the permission to create the Agreement content type.'
+create conclusion:
+  title: 'Create conclusion'
+  description: 'Create a conclusion merging two agreements. Must also have the permission to create the Conclusion content type.'

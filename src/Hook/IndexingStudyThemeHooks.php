@@ -19,6 +19,10 @@ class IndexingStudyThemeHooks {
         'base hook' => 'node',
         'template' => 'node--document-with-subjects',
       ],
+      'node__teaser' => [
+        'base hook' => 'node',
+        'template' => 'node--teaser',
+      ],
       'paragraph__subjects' => [
         'base hook' => 'paragraph',
         'template' => 'paragraph--subjects'

@@ -4,6 +4,13 @@
   column-gap: 3em;
 }
 
+.ais-subjects-wrapper > article {
+  max-width: 49%;
+  display: inline-flex;
+  text-indent: -2em;
+  padding-left: 2em;
+}
+
 .node-ais-subject-analysis-form .layout-form {
   grid-template-columns: minmax(0,3fr) minmax(28rem,1fr);
 }

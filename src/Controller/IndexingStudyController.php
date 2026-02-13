@@ -269,6 +269,43 @@ class IndexingStudyController extends ControllerBase {
       '#access' => $manage_agreement_url->access(),
     ];
 
+    // Build conclusion section.
+    $needs_conclusion = count($study_node->getDocIdsAwaitingConclusion());
+    $conclusion_url = Url::fromRoute('indexing_study.conclusion', ['study_node' => $study_node->id()]);
+    $manage_conclusion_url = Url::fromRoute('view.is_conclusion.page_1', ['field_ais_study_target_id' => $study_node->id()]);
+    $title = $this->t("Conclusion (@count awaiting conclusion)", [
+      '@count' => $needs_conclusion
+    ]);
+    $build['conclusion'] = [
+      '#type' => 'details',
+      '#title' => $this->titleTag($title),
+    ];
+    if ($needs_conclusion > 0) {
+      if ($conclusion_url->access()) {
+        $build['conclusion']['conclusion'] = [
+          '#type' => 'link',
+          '#title' => $this->t('Create Conclusion'),
+          '#url' => $conclusion_url,
+          '#attributes' => [
+            'class' => ['button', 'button--primary'],
+          ],
+        ];
+      }
+      else {
+        $build['conclusion']['conclusion'] = $this->disabledButton($this->t('Create Conclusion'), $this->t('You do not have permission to create conclusion.'));
+      }
+    }
+    else {
+      $build['conclusion']['conclusion'] = $this->disabledButton($this->t('Create Conclusion'), $this->t('There are no documents awaiting conclusion.'));
+    }
+    $build['conclusion']['manage'] = [
+      '#type' => 'link',
+      '#title' => $this->t('Manage conclusion'),
+      '#url' => $manage_conclusion_url,
+      '#access' => $manage_conclusion_url->access()
+    ];
+
+
     // Build results section.
     $result_count = $study_node->getDocCountCompleted();
     $results_url = Url::fromRoute('view.multiagreement_results.page_1', ['node' => $study_node->id()]);
@@ -499,6 +536,37 @@ class IndexingStudyController extends ControllerBase {
             'document' => $document->id(),
             'agreement_assignment' => $agreement_assignment->id(),
             'destination' => Url::fromRoute('indexing_study.agreement', ['study_node' => $study_node->id()])->toString()
+          ]
+        ]
+      );
+    }
+  }
+  /**
+   * Returns the response page for the next assignment in a study.
+   */
+  public function conclusion(AisStudyInterface $study_node) {
+    $config = $this->config('indexing_study.settings');
+    $needs_conclusion = $study_node->getDocIdsAwaitingConclusion();
+    if(count($needs_conclusion) < 1) {
+      return [
+        '#markup' => $this->t('There are no outstanding documents needing conclusion in this study. 🥳'),
+        '#cache' => ['max-age'=>0]
+      ];
+    }
+    else {
+      $document_id = $needs_conclusion[array_rand($needs_conclusion)];
+      $document = $this->entityTypeManager()->getStorage('node')->load($document_id);
+      $agreements = $document->getAgreements();
+      $agreement_ids = array_map(fn($a): int =>  $a->id(), $agreements);
+
+      return $this->redirect(
+        'node.add',
+        ['node_type' => $config->get('conclusion.bundle')],
+        [
+          'query' => [
+            'agreements' => Yaml::encode($agreement_ids),
+            'document' => $document_id,
+            'destination' => Url::fromRoute('indexing_study.conclusion', ['study_node' => $study_node->id()])->toString()
           ]
         ]
       );

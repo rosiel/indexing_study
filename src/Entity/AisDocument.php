@@ -1,6 +1,7 @@
 <?php
 namespace Drupal\indexing_study\Entity;
 
+use Exception;
 use Drupal\user\UserInterface;
 
 class AisDocument extends AbstractAisNode implements  AisDocumentInterface {
@@ -17,15 +18,24 @@ class AisDocument extends AbstractAisNode implements  AisDocumentInterface {
     return $storage->loadMultiple($analysis_ids);
   }
 
-  public function getConsensus(): array
+  public function getConsensus(): AisConsensusInterface
   {
+    $storage = $this->entityTypeManager()->getStorage('node');
     $consensus_ids = $this->entityTypeManager()->getStorage('node')->getQuery()
       ->accessCheck(TRUE)
       ->condition('status', 1)
       ->condition('type', $this->config()->get('consensus.bundle'))
       ->condition($this->config()->get('consensus.document_field'), $this->id())
       ->execute();
-    return $this->intify_array($consensus_ids);
+    $consensi = $storage->loadMultiple($consensus_ids);
+    if (count($consensi) > 0) {
+      $consensus = array_pop($consensi);
+      if (!($consensus instanceof AisConsensusInterface)) {
+        throw new Exception("Consensus of the wrong bundle.");
+      }
+      return $consensus;
+    }
+    throw new Exception("Consensus not found for document {$this->id()}.");
   }
 
   public function getAgreementAssignments(): array {
@@ -46,6 +56,7 @@ class AisDocument extends AbstractAisNode implements  AisDocumentInterface {
       ->condition('status', 1)
       ->condition('type', $this->config()->get('agreement.bundle'))
       ->condition($this->config()->get('agreement.document_field'), $this->id())
+      ->sort('created', 'ASC')
       ->execute();
     return $storage->loadMultiple($agreement_ids);
   }

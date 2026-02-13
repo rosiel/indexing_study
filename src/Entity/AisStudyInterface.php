@@ -82,6 +82,8 @@ interface AisStudyInterface extends AbstractAisNodeInterface {
 
   public function getDocIdsAwaitingConsensus(): array;
 
+  public function getDocIdsAwaitingConclusion(): array;
+
   public function getDocIdsRejected(): array;
 
   public function createAssignments(array $reviewers): bool;

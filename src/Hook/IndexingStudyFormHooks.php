@@ -5,6 +5,7 @@ namespace Drupal\indexing_study\Hook;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Config\ImmutableConfig;
+use Drupal\Core\Entity\EntityFormInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Hook\Attribute\Hook;
@@ -39,6 +40,13 @@ class IndexingStudyFormHooks {
    */
   #[Hook('form_alter')]
   public function formAlter(&$form, FormStateInterface $form_state, $form_id): void {
+    if (! ($form_state->getFormObject() instanceof EntityFormInterface)) {
+      return;
+    }
+    $entity = $form_state->getFormObject()->getEntity();
+    $form['#attached']['library'][] = 'indexing_study/indexing_study';
+    $view_builder = \Drupal::entityTypeManager()->getViewBuilder('node');
+
     // Subject analysis bundle form.
     if ($form_id == 'node_' . $this->config->get('subject_analysis.bundle') . '_form') {
       $form['#after_build'][] = [self::class, 'showDocument'];
@@ -64,8 +72,6 @@ class IndexingStudyFormHooks {
       ];
       $form['sidebar_submit']['actions'] = $form['actions'];
       unset($form['actions']);
-      // Attach css library to make right-hand sidebar wider.
-      $form['#attached']['library'][] = 'indexing_study/indexing_study';
 
       // Add reject button.
       $form['sidebar_submit']['actions']['reject'] = [
@@ -81,12 +87,10 @@ class IndexingStudyFormHooks {
 
     # Consensus form.
     else if ($form_id == 'node_' . $this->config->get('consensus.bundle') . '_form') {
-      $form['#attached']['library'][] = 'indexing_study/indexing_study';
       // Populate the bonus stuff for the Consensus page.
       $form['#after_build'][] = [self::class, 'showDocument'];
       $form[$this->config->get('consensus.document_field')]['#after_build'][] = [self::class, 'setDisabled'];
       $form[$this->config->get('consensus.subject_analysis_field')]['#after_build'][] = [self::class, 'setDisabled'];
-      $entity = $form_state->getFormObject()->getEntity();
       $analyses = $entity->get($this->config->get('consensus.subject_analysis_field'))->getValue();
       $subjects_to_compare = [
         '#type' => 'container',
@@ -118,9 +122,60 @@ class IndexingStudyFormHooks {
       $form[$this->config->get('agreement.document_field')]['#after_build'][] = [self::class, 'setDisabled'];
       $form[$this->config->get('agreement.consensus_field')]['#after_build'][] = [self::class, 'setDisabled'];
       $form[$this->config->get('agreement.agreement_assignment_field')]['#after_build'][] = [self::class, 'setDisabled'];
+
+    # Conclusion form.
+    } else if ($form_id == 'node_' . $this->config->get('conclusion.bundle') . '_form') {
+
+      # Show document and subjects.
+      $documents = $entity->get($this->config->get('conclusion.document_field'))->referencedEntities();
+      if (count($documents)) {
+        $document = array_pop($documents);
+        $form['ais document'] = [
+          '#type' => 'container',
+          '#attributes' => ['class' => ['ais-document']],
+          '#weight' => -5,
+          'document' => $view_builder->view($document, 'teaser'),
+        ];
+        $form['subjects to compare'] = [
+          '#type' => 'container',
+          '#attributes' => ['class' => ['ais-subjects-wrapper']],
+          '#weight' => -4,
+          'left' => $document->get($this->config->get('document.subjects_field'))->view('default'),
+          'right' => $document->getConsensus()->get($this->config->get('consensus.subjects_paragraph_field'))->view('teaser')
+        ];
+        $form['subjects to compare']['left']['#weight'] = 0;
+        $form['subjects to compare']['right']['#weight'] = 1;
+        $form['subjects to compare']['left']['#prefix'] = '<article>';
+        $form['subjects to compare']['left']['#suffix'] = '</article>';
+        $form['subjects to compare']['right']['#prefix'] = '<article>';
+        $form['subjects to compare']['right']['#suffix'] = '</article>';
+      }
+
+      $agreements_to_compare = [
+        '#type' => 'container',
+        '#attributes' => ['class' => ['ais-subjects-wrapper']],
+        '#weight' => -3,
+      ];
+      # Show agreements to compare.
+      $agreements = $entity->get($this->config->get('conclusion.agreement_field'))->referencedEntities();
+      foreach ($agreements as $delta => $agreement) {
+        $agreements_to_compare['reviewer_' . $delta + 1] = [
+          '#type' => 'container',
+          '#markup' => '<h3>Agreement ' . $delta + 1 . '</h3>',
+          'node' => $view_builder->view($agreement, 'teaser'),
+          '#weight' => $delta,
+          ];
+      }
+      array_unshift($form, $agreements_to_compare);
+
+      $form[$this->config->get('conclusion.document_field')]['#after_build'][] = [self::class, 'setDisabled'];
+      $form[$this->config->get('conclusion.agreement_field')]['#after_build'][] = [self::class, 'setDisabled'];
+
+    # Feeds form.
     } else if ($form_id == 'feeds_feed_' . $this->config->get('feed.bundle') . '_form') {
       $form[$this->config->get('feed.study_field')]['#after_build'][] = [self::class, 'setDisabled'];
     }
+
 
   }
 
@@ -165,6 +220,7 @@ class IndexingStudyFormHooks {
       $document = $element[$document_field]['widget'][0]['target_id']['#default_value'][0];
       $view_builder = \Drupal::entityTypeManager()->getViewBuilder('node');
       $rendered_node = $view_builder->view($document, 'document_without_subjects');
+
       array_unshift($element, $rendered_node);
     }
     return $element;
@@ -175,11 +231,10 @@ class IndexingStudyFormHooks {
     $subjects_to_compare = [
       '#type' => 'container',
       '#attributes' => ['class' => ['ais-subjects-wrapper']],
-      '#attached' => ['library' => ['indexing_study/indexing_study']],
     ];
     if (isset($form[$config->get('agreement.document_field')]['widget'][0]['target_id']['#default_value'])) {
-      $consensus = $form[$config->get('agreement.document_field')]['widget'][0]['target_id']['#default_value'][0];
-      $subjects_to_compare['left'] = $consensus->get($config->get('document.subjects_field'))->view('subjects_only');
+      $document = $form[$config->get('agreement.document_field')]['widget'][0]['target_id']['#default_value'][0];
+      $subjects_to_compare['left'] = $document->get($config->get('document.subjects_field'))->view('subjects_only');
       $subjects_to_compare['left']['#weight'] = 0;
     }
 
@@ -198,7 +253,6 @@ class IndexingStudyFormHooks {
     $subjects_to_compare = [
       '#type' => 'container',
       '#attributes' => ['class' => ['ais-subjects-wrapper']],
-      '#attached' => ['library' => ['indexing_study/indexing_study']],
     ];
     if (isset($form[$config->get('consensus.subject_analysis_field')]['widget'][0]['target_id']['#default_value'])) {
       $subject_analysis = $form[$config->get('consensus.subject_analysis_field')]['widget'][0]['target_id']['#default_value'][0];
