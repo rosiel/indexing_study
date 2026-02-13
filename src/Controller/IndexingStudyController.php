@@ -169,6 +169,12 @@ class IndexingStudyController extends ControllerBase {
     else {
       $build['analysis']['analyze'] = $this->disabledButton($this->t('Analyze'), $this->t('There are no documents to analyze.'));
     }
+    $build['analysis']['manage'] = [
+      '#type' => 'link',
+      '#title' => $this->t('Manage analyses'),
+      '#url' => $manage_analyses_url,
+      '#access' => $manage_analyses_url->access()
+    ];
     $build['analysis']['progress'] = [
       '#type' => 'container',
       '#markup' => $this->t('Study progress')
@@ -185,12 +191,7 @@ class IndexingStudyController extends ControllerBase {
 
       ],
     ];
-    $build['analysis']['manage'] = [
-      '#type' => 'link',
-      '#title' => $this->t('Manage analyses'),
-      '#url' => $manage_analyses_url,
-      '#access' => $manage_analyses_url->access()
-    ];
+
 
     // Build consensus section.
     $needs_consensus = $study_node->getDocCountAwaitingConsensus();
@@ -261,13 +262,14 @@ class IndexingStudyController extends ControllerBase {
     else {
       $build['agreement']['agreement'] = $this->disabledButton($this->t('Create Agreement'), $this->t('There are no documents awaiting your agreement.'));
     }
-    $build['agreement']['status'] = $this->agreementStatusTable($study_node);
     $build['agreement']['manage'] = [
       '#type' => 'link',
       '#title' => $this->t('Manage agreements'),
       '#url' => $manage_agreement_url,
       '#access' => $manage_agreement_url->access(),
     ];
+    $build['agreement']['status'] = $this->agreementStatusTable($study_node);
+
 
     // Build conclusion section.
     $needs_conclusion = count($study_node->getDocIdsAwaitingConclusion());
