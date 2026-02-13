@@ -49,7 +49,11 @@ class IndexingStudyFormHooks {
 
     // Subject analysis bundle form.
     if ($form_id == 'node_' . $this->config->get('subject_analysis.bundle') . '_form') {
-      $form['#after_build'][] = [self::class, 'showDocument'];
+      // Show document.
+      $document = $entity->get($this->config->get('subject_analysis.document_field'))->referencedEntities()[0] ?? null;
+      if ($document) {
+        $this->showDocument($form, $document, $view_builder, 'document_without_subjects', '-5' );
+      }
       $form[$this->config->get('subject_analysis.document_field')]['#after_build'][] = [self::class, 'setDisabled'];
       $form[$this->config->get('subject_analysis.assignment_field')]['#after_build'][] = [self::class, 'setDisabled'];
 
@@ -87,55 +91,62 @@ class IndexingStudyFormHooks {
 
     # Consensus form.
     else if ($form_id == 'node_' . $this->config->get('consensus.bundle') . '_form') {
-      // Populate the bonus stuff for the Consensus page.
-      $form['#after_build'][] = [self::class, 'showDocument'];
-      $form[$this->config->get('consensus.document_field')]['#after_build'][] = [self::class, 'setDisabled'];
-      $form[$this->config->get('consensus.subject_analysis_field')]['#after_build'][] = [self::class, 'setDisabled'];
-      $analyses = $entity->get($this->config->get('consensus.subject_analysis_field'))->getValue();
+      // Populate the Document for the Consensus page.
+      $document = $entity->get($this->config->get('consensus.document_field'))->referencedEntities()[0] ?? null;
+      if ($document) {
+        $this->showDocument($form, $document, $view_builder, 'document_without_subjects', '-5' );
+      }
+      // Populate the analyses for the Consensus page.
+      $analyses = $entity->get($this->config->get('consensus.subject_analysis_field'))->referencedEntities();
       $subjects_to_compare = [
         '#type' => 'container',
         '#attributes' => ['class' => ['ais-subjects-wrapper']],
       ];
       foreach ($analyses as $delta => $analysis) {
-        if (isset($analysis['target_id'])) {
-          $analysis_entity = Node::load($analysis['target_id']);
-          $analysis_subjects = $analysis_entity->get($this->config->get('subject_analysis.subjects_field'))->getValue();
-          $options = [];
-          foreach (array_column($analysis_subjects, 'value') as $option) {
-            $options[$option] = $option;
-          }
-          $subjects_to_compare['reviewer_' . $delta + 1] = [
-            '#type' => 'checkboxes',
-            '#title' => $this->t('Reviewer ' . $delta + 1),
-            '#options' => $options,
-          ];
+        $analysis_subjects = $analysis->get($this->config->get('subject_analysis.subjects_field'))->getValue();
+        $options = [];
+        foreach (array_column($analysis_subjects, 'value') as $option) {
+          $options[$option] = $option;
         }
+        $subjects_to_compare['reviewer_' . $delta + 1] = [
+          '#type' => 'checkboxes',
+          '#title' => $this->t('Reviewer ' . $delta + 1),
+          '#options' => $options,
+        ];
       }
+      // Add a class to the subjects (paragraph) field
       $form[$this->config->get('consensus.subjects_paragraph_field')]['#attributes']['class'][] = 'consensus-topic';
       array_unshift($form, $subjects_to_compare);
 
+      // Set disabled fields.
+      $form[$this->config->get('consensus.document_field')]['#after_build'][] = [self::class, 'setDisabled'];
+      $form[$this->config->get('consensus.subject_analysis_field')]['#after_build'][] = [self::class, 'setDisabled'];
+
+      // Don't display the meta or revision information.
+      $form['advanced']['#access'] = False;
+
     # Agreement form.
     } else if ($form_id == 'node_' . $this->config->get('agreement.bundle') . '_form') {
-      // Populate the bonus stuff for the Agreement page.
-      $form['#after_build'][] = [self::class, 'showSubjectsForAgreement'];
-      $form['#after_build'][] = [self::class, 'showDocument'];
+      // Populate the Document for the Agreement page.
+      $document = $entity->get($this->config->get('agreement.document_field'))->referencedEntities()[0] ?? null;
+      if ($document) {
+
+        $this->showDocument($form, $document, $view_builder, 'document_without_subjects', '-5' );
+      }
+      $this->showSubjectsForAgreement($form, $entity);
       $form[$this->config->get('agreement.document_field')]['#after_build'][] = [self::class, 'setDisabled'];
       $form[$this->config->get('agreement.consensus_field')]['#after_build'][] = [self::class, 'setDisabled'];
       $form[$this->config->get('agreement.agreement_assignment_field')]['#after_build'][] = [self::class, 'setDisabled'];
 
+      // Don't display the meta or revision information.
+      $form['advanced']['#access'] = False;
+
     # Conclusion form.
     } else if ($form_id == 'node_' . $this->config->get('conclusion.bundle') . '_form') {
-
       # Show document and subjects.
-      $documents = $entity->get($this->config->get('conclusion.document_field'))->referencedEntities();
-      if (count($documents)) {
-        $document = array_pop($documents);
-        $form['ais document'] = [
-          '#type' => 'container',
-          '#attributes' => ['class' => ['ais-document']],
-          '#weight' => -5,
-          'document' => $view_builder->view($document, 'teaser'),
-        ];
+      $document = $entity->get($this->config->get('conclusion.document_field'))->referencedEntities()[0] ?? null;
+      if ($document) {
+        $this->showDocument($form, $document, $view_builder, 'teaser', -5);
         $form['subjects to compare'] = [
           '#type' => 'container',
           '#attributes' => ['class' => ['ais-subjects-wrapper']],
@@ -213,65 +224,35 @@ class IndexingStudyFormHooks {
     return;
   }
 
-  public static function showDocument($element, $form_state) {
-    $config = \Drupal::config('indexing_study.settings');
-    $document_field = $config->get('subject_analysis.document_field'); // TODO: Fix to vary with type
-    if (isset($element[$document_field]['widget'][0]['target_id']['#default_value'])) {
-      $document = $element[$document_field]['widget'][0]['target_id']['#default_value'][0];
-      $view_builder = \Drupal::entityTypeManager()->getViewBuilder('node');
-      $rendered_node = $view_builder->view($document, 'document_without_subjects');
-
-      array_unshift($element, $rendered_node);
-    }
-    return $element;
+  protected function showDocument(&$form, $document, $view_builder, $view_mode = 'document_without_subjects', $weight = -5) {
+    $rendered_node = $view_builder->view($document, $view_mode);
+    $form['ais_document'] = [
+      '#type' => 'container',
+      '#attributes' => ['class' => ['ais-document']],
+      '#weight' => $weight,
+      'document' => $rendered_node,
+    ];
   }
 
-  public static function showSubjectsForAgreement($form, $form_state) {
-    $config = \Drupal::config('indexing_study.settings');
-    $subjects_to_compare = [
+  protected function showSubjectsForAgreement(&$form, $agreement) {
+    $build = [
       '#type' => 'container',
       '#attributes' => ['class' => ['ais-subjects-wrapper']],
+      '#weight' => -3,
     ];
-    if (isset($form[$config->get('agreement.document_field')]['widget'][0]['target_id']['#default_value'])) {
-      $document = $form[$config->get('agreement.document_field')]['widget'][0]['target_id']['#default_value'][0];
-      $subjects_to_compare['left'] = $document->get($config->get('document.subjects_field'))->view('subjects_only');
-      $subjects_to_compare['left']['#weight'] = 0;
+    $document = $agreement->get($this->config->get('agreement.document_field'))->referencedEntities()[0] ?? null;
+    if ($document) {
+      $build['left'] = $document->get($this->config->get('document.subjects_field'))->view('subjects_only');
+      $build['left']['#weight'] = 0;
     }
-
-    if (isset($form[$config->get('agreement.consensus_field')]['widget'][0]['target_id']['#default_value'])) {
-      $consensus = $form[$config->get('agreement.consensus_field')]['widget'][0]['target_id']['#default_value'][0];
-      $subjects_to_compare['right'] = $consensus->get($config->get('consensus.subjects_paragraph_field'))->view('subjects_only');
-      $subjects_to_compare['right']['#weight'] = 1;
-
+    $consensus = $agreement->get($this->config->get('agreement.consensus_field'))->referencedEntities()[0] ?? null;
+    if ($consensus) {
+      $build['right'] = $consensus->get($this->config->get('consensus.subjects_paragraph_field'))->view('subjects_only');
+      $build['right']['#weight'] = 1;
     }
-    array_unshift($form, $subjects_to_compare);
-    return $form;
+    $form['ais agreement comparison'] = $build;
   }
 
-  public static function showSubjectsForConsensus($form, $form_state) {
-    $config = \Drupal::config('indexing_study.settings');
-    $subjects_to_compare = [
-      '#type' => 'container',
-      '#attributes' => ['class' => ['ais-subjects-wrapper']],
-    ];
-    if (isset($form[$config->get('consensus.subject_analysis_field')]['widget'][0]['target_id']['#default_value'])) {
-      $subject_analysis = $form[$config->get('consensus.subject_analysis_field')]['widget'][0]['target_id']['#default_value'][0];
-      $subjects_1 = $subject_analysis->get($config->get('consensus.subjects_field'))->view('subjects_only');
-      $subjects_11 = $subject_analysis->get($config->get('consensus.subjects_field'))->getValue();
-      $options = [];
-      foreach ($subjects_11 as $subject) {
-        $options[$subject['value']] = $subject['value'];
-      }
 
-      $subjects_to_compare['left'] = $subjects_1;
-    }
-
-    if (isset($form[$config->get('consensus.subject_analysis_field')]['widget'][1]['target_id']['#default_value'])) {
-      $subject_analysis = $form[$config->get('consensus.subject_analysis_field')]['widget'][1]['target_id']['#default_value'][0];
-      $subjects_to_compare['right'] = $subject_analysis->get($config->get('consensus.subjects_field'))->view('subjects_only');
-    }
-    array_unshift($form, $subjects_to_compare);
-    return $form;
-  }
 
 }

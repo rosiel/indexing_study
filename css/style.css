@@ -18,3 +18,11 @@
 .is-subjects .form-submit:not(.field-add-more-submit)  {
   display: none;
 }
+
+.is-consensus-topic {
+  text-decoration: underline black;
+}
+
+.is-antecedent-label, .is-antecedent {
+  font-style: italic;
+}

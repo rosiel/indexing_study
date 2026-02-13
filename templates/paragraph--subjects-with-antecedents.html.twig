@@ -38,8 +38,8 @@
  * @ingroup themeable
  */
 #}
-<strong>{{ content.field_topic }}</strong>
+<span class="is-consensus-topic">{{ content.field_topic }}</span>
 <ul>
-<li><em>Reviewer 1:</em> {{ content.field_reviewer_1_antecedents  }}</li>
-<li><em>Reviewer 2:</em> {{ content.field_reviewer_2_antecedents  }}</li>
+<li><span class="is-antecedent-label">Reviewer 1:</span> <span class="is-antecedent"{{ content.field_reviewer_1_antecedents  }}</span></li>
+<li><span class="is-antecedent-label">Reviewer 2:</span> <span class="is-antecedent"{{ content.field_reviewer_2_antecedents  }}</span></li>
 </ul>
