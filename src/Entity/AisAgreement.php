@@ -33,6 +33,4 @@ class AisAgreement extends AbstractAisNode implements AisAgreementInterface
   }
 
 
-
-
 }

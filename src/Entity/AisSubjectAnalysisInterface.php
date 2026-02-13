@@ -11,4 +11,6 @@ interface AisSubjectAnalysisInterface extends AbstractAisNodeInterface
    * @return AisAssignmentInterface
    */
   public function getAssignment(): AisAssignmentInterface;
+
+  public function getDocument(): AisDocumentInterface;
 }

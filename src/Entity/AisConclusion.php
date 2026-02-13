@@ -12,4 +12,8 @@ class AisConclusion extends AbstractAisNode implements AisConclusionInterface
   {
     return [];
   }
+
+  public function getDocument(): AisDocumentInterface {
+    return $this->get($this->config()->get('conclusion.document_field'))->referencedEntities()[0];
+  }
 }

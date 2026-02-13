@@ -6,11 +6,19 @@ use Drupal\Core\Breadcrumb\Breadcrumb;
 use Drupal\Core\Breadcrumb\BreadcrumbBuilderInterface;
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Config\ImmutableConfig;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Link;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
+use Drupal\indexing_study\Entity\AisAgreementAssignmentInterface;
+use Drupal\indexing_study\Entity\AisAgreementInterface;
+use Drupal\indexing_study\Entity\AisAssignmentInterface;
+use Drupal\indexing_study\Entity\AisConclusionInterface;
+use Drupal\indexing_study\Entity\AisConsensusInterface;
+use Drupal\indexing_study\Entity\AisDocumentInterface;
 use Drupal\indexing_study\Entity\AisStudyInterface;
+use Drupal\indexing_study\Entity\AisSubjectAnalysisInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
@@ -36,9 +44,9 @@ class IndexingStudyBreadcrumbBuilder implements BreadcrumbBuilderInterface {
   /**
    * The config.
    *
-   * @var \Drupal\Core\Config\ConfigFactoryInterface
+   * @var \Drupal\Core\Config\ImmutableConfig
    */
-  protected ConfigFactoryInterface $configFactory;
+  protected ImmutableConfig $config;
 
   /**
    * Constructs the IndexingStudyBreadcrumbBuilder.
@@ -48,27 +56,35 @@ class IndexingStudyBreadcrumbBuilder implements BreadcrumbBuilderInterface {
    * @param \Symfony\Component\HttpFoundation\RequestStack $request_stack
    *   The request stack.
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
-   *   The config factory.
+   *   The config for Indexing Study.
    */
   public function __construct(EntityTypeManagerInterface $entity_type_manager, RequestStack $request_stack, ConfigFactoryInterface $config_factory) {
     $this->entityTypeManager = $entity_type_manager;
     $this->requestStack = $request_stack;
-    $this->configFactory = $config_factory;
+    $this->config = $config_factory->get('indexing_study.settings');
+
   }
 
   /**
    * See interface.
    */
   public function applies(RouteMatchInterface $route_match, ?CacheableMetadata $cacheable_metadata = NULL): bool {
-    $config = $this->configFactory->get('indexing_study.settings');
     $applies_to = [
-      $config->get('subject_analysis.bundle'),
-      $config->get('consensus.bundle'),
-      $config->get('agreement.bundle'),
+      $this->config->get('document.bundle'),
+      $this->config->get('subject_analysis.bundle'),
+      $this->config->get('consensus.bundle'),
+      $this->config->get('agreement_assignment.bundle'),
+      $this->config->get('agreement.bundle'),
+      $this->config->get('conclusion.bundle'),
     ];
     $cacheable_metadata?->addCacheContexts(['route']);
     if ($route_match->getRouteName() == 'node.add') {
       if (in_array($route_match->getParameter('node_type')->id(), $applies_to)) {
+        return TRUE;
+      }
+    }
+    if ($route_match->getRouteName() == 'entity.node.canonical') {
+      if (in_array($route_match->getParameter('node')->bundle(), $applies_to)) {
         return TRUE;
       }
     }
@@ -80,20 +96,43 @@ class IndexingStudyBreadcrumbBuilder implements BreadcrumbBuilderInterface {
    */
   public function build(RouteMatchInterface $route_match): Breadcrumb {
     $breadcrumb = new Breadcrumb();
-    $breadcrumb->addLink(Link::createFromRoute($this->t('Home'), '<front>'));
+    $breadcrumb->addLink(Link::createFromRoute($this->t('All Studies'), '<front>'));
     $destination = $this->requestStack->getCurrentRequest()->query->get('destination');
-    if (!$destination) {
-      return $breadcrumb;
+    if ($destination) {
+      $destination_nid = preg_replace('/^\/study\/(\d+)\/[a-z_]*$/', '$1', $destination);
+      if (!$destination_nid) {
+        return $breadcrumb;
+      }
+      $destination_node = $this->entityTypeManager->getStorage('node')->load($destination_nid);
+      if ($destination_node && $destination_node instanceof AisStudyInterface) {
+        $breadcrumb->addLink(Link::createFromRoute($destination_node->getTitle(), 'indexing_study.study', ['study_node' => $destination_nid]));
+      }
+      $breadcrumb->addCacheableDependency($destination);
     }
-    $destination_nid = preg_replace('/^\/study\/(\d+)\/[a-z_]*$/', '$1', $destination);
-    if (!$destination_nid) {
-      return $breadcrumb;
+    else {
+      $entity = $route_match->getParameter('node');
+      if ($entity instanceof AisDocumentInterface) {
+        $breadcrumb = $this->addDocumentLinks($breadcrumb, $entity, false);
+      }
+      if ($entity instanceof AisAssignmentInterface
+        or $entity instanceof AisSubjectAnalysisInterface
+        or $entity instanceof AisConsensusInterface
+        or $entity instanceof AisAgreementAssignmentInterface
+        or $entity instanceof AisAgreementInterface
+        or $entity instanceof AisConclusionInterface) {
+        $document = $entity->getDocument();
+        $breadcrumb = $this->addDocumentLinks($breadcrumb, $document, false);
+      }
     }
-    $destination_node = $this->entityTypeManager->getStorage('node')->load($destination_nid);
-    if ($destination_node && $destination_node instanceof AisStudyInterface) {
-      $breadcrumb->addLink(Link::createFromRoute($destination_node->getTitle(), 'indexing_study.study', ['study_node' => $destination_nid]));
+    return $breadcrumb;
+  }
+
+  protected function addDocumentLinks($breadcrumb, $document, $self_link = true): Breadcrumb {
+    $study = $document->getStudy();
+    $breadcrumb->addLink(Link::createFromRoute($study->getTitle(), 'indexing_study.study', ['study_node' => $study->id()]));
+    if ($self_link) {
+      $breadcrumb->addLink(Link::createFromRoute($document->getTitle(), 'entity.node.canonical', ['node' => $document->id()]));
     }
-    $breadcrumb->addCacheableDependency($destination);
     return $breadcrumb;
   }
 

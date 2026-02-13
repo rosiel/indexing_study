@@ -33,4 +33,9 @@ class AisSubjectAnalysis extends AbstractAisNode implements AisSubjectAnalysisIn
   }
 
 
+  public function getDocument(): AisDocumentInterface
+  {
+    return $this->get($this->config()->get('subject_analysis.document_field'))->referencedEntities()[0];
+
+  }
 }
