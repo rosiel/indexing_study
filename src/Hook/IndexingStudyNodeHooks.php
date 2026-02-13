@@ -26,17 +26,14 @@ class IndexingStudyNodeHooks {
 
   /**
    * Implements hook_ENTITY_TYPE_insert().
+   * Implements hook_ENTITY_TYPE_update().
    */
   #[Hook('node_insert')]
-  public function nodeInsert(NodeInterface $node): void {
-    if ($node instanceof AisConsensusInterface) {
-      $node->generateAgreementAssignments();
-    }
-  }
   #[Hook('node_update')]
-  public function nodeUpdate(NodeInterface $node): void {
+  public function nodeInsertOrUpdate(NodeInterface $node): void {
     if ($node instanceof AisConsensusInterface) {
       $node->generateAgreementAssignments();
     }
   }
+
 }

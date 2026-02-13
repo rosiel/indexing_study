@@ -26,3 +26,7 @@
 .is-antecedent-label, .is-antecedent {
   font-style: italic;
 }
+
+.ais-document .field {
+  padding-bottom: 1em;
+}
