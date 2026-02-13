@@ -272,7 +272,7 @@ class IndexingStudyController extends ControllerBase {
     // Build conclusion section.
     $needs_conclusion = count($study_node->getDocIdsAwaitingConclusion());
     $conclusion_url = Url::fromRoute('indexing_study.conclusion', ['study_node' => $study_node->id()]);
-    $manage_conclusion_url = Url::fromRoute('view.is_conclusion.page_1', ['field_ais_study_target_id' => $study_node->id()]);
+    $manage_conclusion_url = Url::fromRoute('view.is_conclusions.page_1', ['field_ais_study_target_id' => $study_node->id()]);
     $title = $this->t("Conclusion (@count awaiting conclusion)", [
       '@count' => $needs_conclusion
     ]);
@@ -300,7 +300,7 @@ class IndexingStudyController extends ControllerBase {
     }
     $build['conclusion']['manage'] = [
       '#type' => 'link',
-      '#title' => $this->t('Manage conclusion'),
+      '#title' => $this->t('Manage conclusions'),
       '#url' => $manage_conclusion_url,
       '#access' => $manage_conclusion_url->access()
     ];
