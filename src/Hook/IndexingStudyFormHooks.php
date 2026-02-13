@@ -158,6 +158,9 @@ class IndexingStudyFormHooks {
       // Set disabled fields.
       $form[$this->config->get('conclusion.document_field')]['#after_build'][] = [self::class, 'setDisabled'];
       $form[$this->config->get('conclusion.agreement_field')]['#after_build'][] = [self::class, 'setDisabled'];
+      
+      // Don't display the meta or revision information.
+      $form['advanced']['#access'] = False;
 
     // Feeds form.
     } else if ($form_id == 'feeds_feed_' . $this->config->get('feed.bundle') . '_form') {
