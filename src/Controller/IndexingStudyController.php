@@ -96,7 +96,7 @@ class IndexingStudyController extends ControllerBase {
     ];
 
     // Build the assignment section.
-    $needs_assignment = $study_node->getDocCountAwaitingAssignment();
+    $needs_assignment = count($study_node->getDocIdsAwaitingAssignment());
     $assignment_url = Url::fromRoute('indexing_study.assign', ['study_node' => $study_node->id()]);
     $manage_assignments_url = Url::fromRoute('view.is_assignments.page_1', ['field_ais_study_target_id' => $study_node->id()]);
     $count_rejected = count($study_node->getDocIdsRejected());
@@ -194,7 +194,7 @@ class IndexingStudyController extends ControllerBase {
 
 
     // Build consensus section.
-    $needs_consensus = $study_node->getDocCountAwaitingConsensus();
+    $needs_consensus = count($study_node->getDocIdsAwaitingConsensus());
     $consensus_url = Url::fromRoute('indexing_study.consensus', ['study_node' => $study_node->id()]);
     $manage_consensus_url = Url::fromRoute('view.is_consensus.page_1', ['field_ais_study_target_id' => $study_node->id()]);
     $title = $this->t("Consensus (@count awaiting consensus)", [
@@ -232,7 +232,7 @@ class IndexingStudyController extends ControllerBase {
     // Build agreement section.
     $agreement_assignments_awaiting = count($study_node->getAgreementAssignmentsAwaiting());
     $docs_awaiting = count($study_node->getDocsAwaitingAgreement());
-    $needs_user = $study_node->getAssignmentCountForAgreement();
+    $needs_user = count($study_node->getAgreementAssignmentsForUser());
     $agreement_url = Url::fromRoute('indexing_study.agreement', ['study_node' => $study_node->id()]);
     $manage_agreement_url = Url::fromRoute('view.is_agreements.page_1', ['field_ais_study_target_id' => $study_node->id()]);
     $title = $this->t("Agreement (@count_docs documents awaiting @count_assignment agreements; @count are waiting for you)", [
@@ -309,7 +309,7 @@ class IndexingStudyController extends ControllerBase {
 
 
     // Build results section.
-    $result_count = $study_node->getDocCountCompleted();
+    $result_count = count($study_node->getDocIdsCompleted());
     $results_url = Url::fromRoute('view.multiagreement_results.page_1', ['node' => $study_node->id()]);
     $title = $this->t("Results (@count completed)", [
       '@count' => $result_count

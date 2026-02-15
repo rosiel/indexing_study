@@ -4,8 +4,11 @@ namespace Drupal\indexing_study\Entity;
 
 use Drupal\Core\Config\ImmutableConfig;
 use Drupal\Core\Entity\EntityStorageInterface;
+use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\Core\Messenger\MessengerTrait;
 use Drupal\node\Entity\Node;
+use Drupal\Core\Logger\LoggerChannelInterface;
+use Psr\Log\LoggerInterface;
 
 class AbstractAisNode extends Node
 {
@@ -17,13 +20,22 @@ class AbstractAisNode extends Node
    */
   protected ImmutableConfig $config;
 
+  /**
+   * The logger channel.
+   *
+   * @var \Drupal\Core\Logger\LoggerChannelInterface
+   */
+  protected LoggerChannelInterface $logger;
+
   public function __construct(array $values, $entity_type, $bundle = FALSE, $translations = [])
   {
     parent::__construct($values, $entity_type, $bundle, $translations);
     $this->config = \Drupal::config('indexing_study.settings');
+    $this->logger = \Drupal::service('logger.factory')->get('indexing_study');
   }
 
-  protected function config() {
+  protected function config(): ImmutableConfig
+  {
     if (!isset($this->config)) {
       $this->config = \Drupal::config('indexing_study.settings');
     }

@@ -1,6 +1,7 @@
 <?php
 namespace Drupal\indexing_study\Entity;
 
+use Drupal\Core\Entity\EntityStorageException;
 use Exception;
 use Drupal\user\UserInterface;
 
@@ -138,10 +139,10 @@ class AisDocument extends AbstractAisNode implements  AisDocumentInterface {
     }
     // Test if assignment of document to user already exists.
     if ($this->assignment_exists($user)) {
-//      $this->logger->error("Can't create duplicate assignment of @document to @user.", [
-//        '@document' => $this->id(),
-//        '@user' => $user->getAccountName()
-//      ]);
+      $this->logger->error("Can't create duplicate assignment of @document to @user.", [
+        '@document' => $this->id(),
+        '@user' => $user->getAccountName()
+      ]);
       return NULL;
     }
 
@@ -156,7 +157,7 @@ class AisDocument extends AbstractAisNode implements  AisDocumentInterface {
       $assignment->save();
       return $assignment->id();
     } catch (EntityStorageException $e) {
-      $this->logger->error('Could not create assignment. Error: ' . $e);
+      $this->logger->error('Could not create assignment. Error: @message', ['@message' => $e->getMessage()]);
       return NULL;
     }
   }

@@ -14,23 +14,13 @@ class AisAgreement extends AbstractAisNode implements AisAgreementInterface
       $this->config()->get('conclusion.agreement_field'));
   }
 
-  public function getAgreementAssignment(): AisAgreementAssignmentInterface|NULL
+  public function getAgreementAssignment(): AisAgreementAssignmentInterface
   {
-    $assignment = $this->get($this->config()->get('agreement.agreement_assignment_field'))->referencedEntities();
-    if (count($assignment) > 0) {
-      return $assignment[0];
-    }
-    return NULL;
+    return $this->get($this->config()->get('agreement.agreement_assignment_field'))->referencedEntities()[0];
   }
 
   public function getDocument(): AisDocumentInterface {
     return $this->get($this->config()->get('agreement.document_field'))->referencedEntities()[0];
   }
-
-  public function getConsensusSubjectsRepresented(): bool {
-    return $this->get($this->config()->get('agreement.consensus_subjects_represented'))->getValue()[0]['value'];
-
-  }
-
 
 }

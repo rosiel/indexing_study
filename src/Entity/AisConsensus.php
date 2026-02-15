@@ -83,12 +83,12 @@ class AisConsensus extends AbstractAisNode implements AisConsensusInterface
 
       $attempts+= 1;
       if ($attempts > 3) {
-        throw new Exception("Unable to generate Agreement assignments for document {$document->id()}.");
+        throw new Exception("Unable to generate Agreement Assignments for document {$document->id()}.");
       }
 
     }
-
   }
+
   public function createAgreementAssignment(UserInterface $user): AisAgreementAssignment {
     if ($this->agreementAssignmentExists($user)) {
       throw new Exception("Assignment agreement for user {$user->getAccountName()} already exists.");
@@ -105,9 +105,10 @@ class AisConsensus extends AbstractAisNode implements AisConsensusInterface
     try {
       $agreement_assignment->save();
       $this->messenger()->addStatus("Added agreement assignment to {$user->getAccountName()}");
+      $this->logger->info("Success! Agreement Assignment created: node @id.", ['@id' => $agreement_assignment->id()]);
       return $agreement_assignment;
     } catch (EntityStorageException $e) {
-      $this->logger->error('Could not create assignment. Error: ' . $e);
+      $this->logger->error('Could not create agreement assignment. Error: @message', ['@message' =>  $e->getMessage()]);
       throw $e;
     }
 

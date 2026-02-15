@@ -57,8 +57,7 @@ class IndexingStudyAssignmentForm extends FormBase {
 
   public function buildForm(array $form, FormStateInterface $form_state, AisStudyInterface $study_node = NULL) {
     $study_title = $study_node->getTitle();
-    $reviewers_per_document_value = 2;
-    $documents_to_assign = (int) $study_node->getDocCountAwaitingAssignment();
+    $documents_to_assign = count($study_node->getDocIdsAwaitingAssignment());
 
     $form['study'] = [
       '#type' => 'value',

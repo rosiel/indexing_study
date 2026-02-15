@@ -1,39 +1,14 @@
 <?php
 namespace Drupal\indexing_study\Entity;
 
+use Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException;
+use Drupal\Component\Plugin\Exception\PluginNotFoundException;
 use Drupal\node\Entity\Node;
 use Drupal\node\NodeInterface;
 use Drupal\user\UserInterface;
 use Exception;
 
 class AisStudy extends AbstractAisNode implements  AisStudyInterface {
-
-  public function getDocCount(): int {
-    return count($this->getDocIdsAll());
-  }
-
-  public function getDocCountCompleted(): int {
-    return count($this->getDocIdsCompleted());
-  }
-
-  public function getDocCountAwaitingAssignment(): int {
-    return count($this->getDocIdsAwaitingAssignment());
-  }
-
-  public function getDocCountFullyAssigned(): int {
-    return count($this->getDocIdsFullyAssigned());
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getAssignmentCountForAnalysisByUser(): int {
-    return count($this->getAssignmentIdsForAnalysisByUser());
-  }
-
-  public function getAssignmentCountForAgreement(): int {
-    return count($this->getAgreementAssignmentsForUser());
-  }
 
   public function getAssignmentsForAnalysis(): array {
     $assignments = $this->getAssignments();
@@ -57,10 +32,12 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
       ->execute();
     return $storage->loadMultiple($query);
   }
+
   /**
+   * @param UserInterface|null $user
    * @return array
-   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
-   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+   * @throws InvalidPluginDefinitionException
+   * @throws PluginNotFoundException
    */
   public function getAssignmentIdsForAnalysisByUser(UserInterface $user = NULL): array {
     // We will calculate assignments for analysis by:
@@ -164,41 +141,6 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
     return array_column($results, 'document_id');
   }
 
-  /**
-   * Get doc ids with 0 subject analyses.
-   *
-   * @return array
-   */
-  public function getDocIdsWith0Analyses() {
-    return $this->getDocIdsByAnalysisCount('0');
-  }
-
-  /**
-   * Get doc ids with 1 subject analyses.
-   *
-   * @return array
-   */
-  public function getDocIdsWith1Analysis() {
-    return $this->getDocIdsByAnalysisCount('1');
-  }
-
-  /**
-   * Get doc ids with 2 subject analyses.
-   *
-   * @return array
-   */
-  public function getDocIdsWith2Analyses() {
-    return $this->getDocIdsByAnalysisCount('2');
-  }
-
-  /**
-   * Get doc ids with over 2 subject analyses.
-   *
-   * @return array
-   */
-  public function getDocIdsWithOver2Analyses() {
-    return $this->getDocIdsByAnalysisCount('>2');
-  }
 
   public function getDocIdsByAnalysisCount($count = NULL): array
   {
@@ -240,7 +182,7 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
     return array_column($results, 'document_id');
   }
 
-  public function getDocIdsCompleted(): array|int
+  public function getDocIdsCompleted(): array
   {
     $config = $this->config();
     return $this->entityTypeManager()->getStorage('node')->getQuery()
@@ -277,9 +219,6 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
     return array_column($results, 'document_id');
   }
 
-  public function getDocCountAwaitingConsensus(): int {
-    return count($this->getDocIdsAwaitingConsensus());
-  }
 
 
   /**
@@ -337,6 +276,7 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
         $existing_reviewers = $document->getAssignedUserIds();
         $eligible_reviewers = array_diff($all_reviewer_ids, $existing_reviewers);
         if (count($eligible_reviewers) < 1) {
+
           // TODO Throw an error.
           throw new Exception("No eligible reviewers for document {$documentId}.");
         }
