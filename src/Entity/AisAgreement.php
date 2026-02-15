@@ -14,9 +14,9 @@ class AisAgreement extends AbstractAisNode implements AisAgreementInterface
       $this->config()->get('conclusion.agreement_field'));
   }
 
-  public function getAgreementAssignment(): AisAgreementAssignmentInterface
+  public function getAgreementAssignment(): AisAgreementAssignmentInterface|NULL
   {
-    return $this->get($this->config()->get('agreement.agreement_assignment_field'))->referencedEntities()[0];
+    return $this->get($this->config()->get('agreement.agreement_assignment_field'))->referencedEntities()[0] ?? NULL;
   }
 
   public function getDocument(): AisDocumentInterface {
