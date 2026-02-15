@@ -3,6 +3,7 @@ namespace Drupal\indexing_study\Plugin\views\filter;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Config\ImmutableConfig;
+use Drupal\Core\Database\Connection;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\views\Plugin\views\filter\NumericFilter;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -43,9 +44,14 @@ class AbstractRelatedNodeCountFilter extends NumericFilter implements ContainerF
    */
   protected ImmutableConfig $config;
 
-  public function __construct($configuration, $plugin_id, $plugin_definition, ConfigFactoryInterface $config_factory) {
-    parent::__construct($configuration, $plugin_id, $plugin_definition, $config_factory);
+  /**
+   * @var \Drupal\Core\Database\Connection
+   */
+  protected Connection $database;
+  public function __construct($configuration, $plugin_id, $plugin_definition, ConfigFactoryInterface $config_factory, Connection $database) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->config = $config_factory->get('indexing_study.settings');
+    $this->database = $database;
   }
 
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition)
@@ -55,6 +61,7 @@ class AbstractRelatedNodeCountFilter extends NumericFilter implements ContainerF
       $plugin_id,
       $plugin_definition,
       $container->get('config.factory'),
+      $container->get('database'),
     );
   }
 
@@ -64,10 +71,8 @@ class AbstractRelatedNodeCountFilter extends NumericFilter implements ContainerF
   public function query() {
     $this->ensureMyTable();
 
-    $database = \Drupal::database();
-
     // Create subquery to get document IDs with their review counts
-    $subquery = $database->select('node', 'n');
+    $subquery = $this->database->select('node', 'n');
     $subquery->leftJoin('node__' . $this->relating_field, 'fd',
       'n.nid = fd.' . $this->relating_field . '_target_id AND fd.bundle = :node_type', [
         ':node_type' => $this->node_type,
