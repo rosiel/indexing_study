@@ -71,10 +71,7 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
     return $assignment_query->execute();
   }
 
-  /**
-   * @param \Drupal\node\NodeInterface $study
-   * @return array
-   */
+
   public function getDocIdsAll(): array  {
     return $this->entityTypeManager()->getStorage('node')->getQuery()
       ->accessCheck(FALSE)

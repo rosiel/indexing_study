@@ -28,9 +28,9 @@ class AisDocument extends AbstractAisNode implements  AisDocumentInterface {
       ->condition('type', $this->config()->get('consensus.bundle'))
       ->condition($this->config()->get('consensus.document_field'), $this->id())
       ->execute();
-    $consensi = $storage->loadMultiple($consensus_ids);
-    if (count($consensi) > 0) {
-      $consensus = array_pop($consensi);
+    $consensuses = $storage->loadMultiple($consensus_ids);
+    if (count($consensuses) > 0) {
+      $consensus = array_pop($consensuses);
       if (!($consensus instanceof AisConsensusInterface)) {
         throw new Exception("Consensus of the wrong bundle.");
       }
