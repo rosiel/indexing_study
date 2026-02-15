@@ -4,10 +4,12 @@ namespace Drupal\indexing_study\Entity;
 
 use Drupal\Core\Config\ImmutableConfig;
 use Drupal\Core\Entity\EntityStorageInterface;
+use Drupal\Core\Messenger\MessengerTrait;
 use Drupal\node\Entity\Node;
 
 class AbstractAisNode extends Node
 {
+  use MessengerTrait;
   /**
    * The Indexing Study Config.
    *
