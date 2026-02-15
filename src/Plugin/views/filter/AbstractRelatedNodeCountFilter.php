@@ -45,7 +45,7 @@ class AbstractRelatedNodeCountFilter extends NumericFilter implements ContainerF
 
   public function __construct($configuration, $plugin_id, $plugin_definition, ConfigFactoryInterface $config_factory) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $config_factory);
-    $this->config = \Drupal::config('indexing_study.settings');
+    $this->config = $config_factory->get('indexing_study.settings');
   }
 
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition)
