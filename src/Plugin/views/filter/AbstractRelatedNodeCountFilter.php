@@ -1,8 +1,11 @@
 <?php
 namespace Drupal\indexing_study\Plugin\views\filter;
 
+use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Config\ImmutableConfig;
+use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\views\Plugin\views\filter\NumericFilter;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Abstract filter for related node count for documents.
@@ -10,7 +13,7 @@ use Drupal\views\Plugin\views\filter\NumericFilter;
  * This finds the number of "target" nodes which have an entity reference
  * field pointing to the "root" node in question, i.e. a reverse reference.
  */
-class AbstractRelatedNodeCountFilter extends NumericFilter {
+class AbstractRelatedNodeCountFilter extends NumericFilter implements ContainerFactoryPluginInterface {
 
   /**
    * Bundle of target nodes.
@@ -40,9 +43,19 @@ class AbstractRelatedNodeCountFilter extends NumericFilter {
    */
   protected ImmutableConfig $config;
 
-  public function __construct($configuration, $plugin_id, $plugin_definition) {
-    parent::__construct($configuration, $plugin_id, $plugin_definition);
+  public function __construct($configuration, $plugin_id, $plugin_definition, ConfigFactoryInterface $config_factory) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition, $config_factory);
     $this->config = \Drupal::config('indexing_study.settings');
+  }
+
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition)
+  {
+    return new static(
+      $configuration,
+      $plugin_id,
+      $plugin_definition,
+      $container->get('config.factory'),
+    );
   }
 
   /**
@@ -76,7 +89,7 @@ class AbstractRelatedNodeCountFilter extends NumericFilter {
     }
     else {
       // If no documents match, ensure no results
-      $this->query->addWhere($this->options['group'], 1, 0, '=');
+      $this->query->addWhere($this->options['group'], 'node.nid', 0, '=');
     }
 
   }
