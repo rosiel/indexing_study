@@ -9,8 +9,8 @@ class AisAgreementAssignment extends AbstractAisNode implements AisAgreementAssi
 
   public function getDependents(): array
   {
-    return $this->computeDependents($this->config->get('agreement.bundle'),
-      $this->config->get('agreement.agreement_assignment_field'));
+    return $this->computeDependents($this->config()->get('agreement.bundle'),
+      $this->config()->get('agreement.agreement_assignment_field'));
   }
 
   public function isCompleted(): bool

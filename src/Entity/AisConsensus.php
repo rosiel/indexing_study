@@ -11,8 +11,8 @@ class AisConsensus extends AbstractAisNode implements AisConsensusInterface
   public function getDependents(): array
   {
     return $this->computeDependents(
-      $this->config->get('agreement_assignment.bundle'),
-      $this->config->get('agreement_assignment.consensus_field'));
+      $this->config()->get('agreement_assignment.bundle'),
+      $this->config()->get('agreement_assignment.consensus_field'));
   }
 
   public function getDocument(): AisDocumentInterface {
@@ -96,12 +96,12 @@ class AisConsensus extends AbstractAisNode implements AisConsensusInterface
 
     $document = $this->getDocument();
     $agreement_assignment = AisAgreementAssignment::create([
-      'type' => $this->config->get('agreement_assignment.bundle'),
+      'type' => $this->config()->get('agreement_assignment.bundle'),
       'title' => 'Agreement Assignment for doc ' . $document->id() . ' to ' . $user->getAccountName(),
     ]);
-    $agreement_assignment->set($this->config->get('agreement_assignment.user_field'), ['target_id' => $user->id()]);
-    $agreement_assignment->set($this->config->get('agreement_assignment.document_field'), ['target_id' => $document->id()]);
-    $agreement_assignment->set($this->config->get('agreement_assignment.consensus_field'), ['target_id' => $this->id()]);
+    $agreement_assignment->set($this->config()->get('agreement_assignment.user_field'), ['target_id' => $user->id()]);
+    $agreement_assignment->set($this->config()->get('agreement_assignment.document_field'), ['target_id' => $document->id()]);
+    $agreement_assignment->set($this->config()->get('agreement_assignment.consensus_field'), ['target_id' => $this->id()]);
     try {
       $agreement_assignment->save();
       $this->messenger()->addStatus("Added agreement assignment to {$user->getAccountName()}");
@@ -117,7 +117,7 @@ class AisConsensus extends AbstractAisNode implements AisConsensusInterface
     $document = $this->getDocument();
     $agreement_assignment_ids = $this->entityTypeManager()->getStorage('node')->getQuery()
       ->accessCheck(FALSE)
-      ->condition('type', $this->config->get('agreement_assignment.bundle'))
+      ->condition('type', $this->config()->get('agreement_assignment.bundle'))
       ->condition($this->config()->get('agreement_assignment.document_field'), $document->id())
       ->condition($this->config()->get('agreement_assignment.user_field'), $user->id())
       ->condition($this->config()->get('agreement_assignment.consensus_field'), $this->id())

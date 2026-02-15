@@ -83,9 +83,9 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
     }
     // Get assignments for that user with that study, that aren't in the completed assignments
     $assignment_query = $this->entityTypeManager()->getStorage('node')->getQuery()
-      ->condition('type', $this->config->get('assignment.bundle'))
-      ->condition($this->config->get('assignment.document_field') . '.entity:node.' . $this->config->get('document.study_field'), $this->id())
-      ->condition($this->config->get('assignment.user_field'), $user->id())
+      ->condition('type', $this->config()->get('assignment.bundle'))
+      ->condition($this->config()->get('assignment.document_field') . '.entity:node.' . $this->config()->get('document.study_field'), $this->id())
+      ->condition($this->config()->get('assignment.user_field'), $user->id())
       ->condition('status', 1) // Exclude rejected assignments.
       ->accessCheck(TRUE);
     if (count($completed_assignments) > 0) {
@@ -102,7 +102,7 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
     return $this->entityTypeManager()->getStorage('node')->getQuery()
       ->accessCheck(FALSE)
       ->condition('type', $this->config()->get('document.bundle'))
-      ->condition($this->config->get('document.study_field'), $this->id())
+      ->condition($this->config()->get('document.study_field'), $this->id())
       ->execute();
   }
 
@@ -110,7 +110,9 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
     $config = $this->config();
     // Assignment.document field shorthand
     $adf = $config->get('assignment.document_field');
-    // Document study field shorthand
+    // Document study field shor
+    //
+    //thand
     $dsf = $config->get('document.study_field');
     $database = \Drupal::database();
     $query = $database->select('node','doc');
@@ -256,19 +258,19 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
     $query = $database->select('node', 'doc');
     $query->addField('doc', 'nid', 'document_id');
     $query->addExpression('COUNT(sa.nid)', 'subject_analysis_count');
-    $query->join('node__' . $this->config->get('subject_analysis.document_field'), 'fadsa',
-      'doc.nid = fadsa.' . $this->config->get('subject_analysis.document_field') . '_target_id');
+    $query->join('node__' . $this->config()->get('subject_analysis.document_field'), 'fadsa',
+      'doc.nid = fadsa.' . $this->config()->get('subject_analysis.document_field') . '_target_id');
     $query->join('node', 'sa', 'sa.nid = fadsa.entity_id AND sa.type = :satype', [
       ':satype' => $config->get('subject_analysis.bundle')]);
-    $query->join('node__' . $this->config->get('document.study_field'), 'study_field',
-      'study_field.entity_id = doc.nid AND study_field.' . $this->config->get('document.study_field') . '_target_id = :study_id', [
+    $query->join('node__' . $this->config()->get('document.study_field'), 'study_field',
+      'study_field.entity_id = doc.nid AND study_field.' . $this->config()->get('document.study_field') . '_target_id = :study_id', [
         ':study_id' => $this->id()]);
     $query->condition('doc.type', $config->get('document.bundle'), '=' );
     $query->groupBy('doc.nid');
     $query->having('subject_analysis_count >= :limit', [':limit' => 2]);
-    $subquery = $database->select('node__' . $this->config->get('consensus.document_field'),'fadc');
+    $subquery = $database->select('node__' . $this->config()->get('consensus.document_field'),'fadc');
     $subquery->join('node', 'con', 'con.nid = fadc.entity_id');
-    $subquery->addField('fadc', $this->config->get('consensus.document_field') . '_target_id', 'document_id');
+    $subquery->addField('fadc', $this->config()->get('consensus.document_field') . '_target_id', 'document_id');
     $subquery->condition('con.type', $config->get('consensus.bundle'), '=');
     $query->condition('doc.nid', $subquery, 'NOT IN');
     $results = $query->execute()->fetchAll();
@@ -355,19 +357,19 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
     $query = $database->select('node', 'doc');
     $query->addField('doc', 'nid', 'document_id');
     $query->addExpression('COUNT(ag.nid)', 'agreement_count');
-    $query->join('node__' . $this->config->get('agreement.document_field'), 'fadag',
-      'doc.nid = fadag.' . $this->config->get('agreement.document_field') . '_target_id');
+    $query->join('node__' . $this->config()->get('agreement.document_field'), 'fadag',
+      'doc.nid = fadag.' . $this->config()->get('agreement.document_field') . '_target_id');
     $query->join('node', 'ag', 'ag.nid = fadag.entity_id AND ag.type = :agtype', [
       ':agtype' => $config->get('agreement.bundle')]);
-    $query->join('node__' . $this->config->get('document.study_field'), 'study_field',
-      'study_field.entity_id = doc.nid AND study_field.' . $this->config->get('document.study_field') . '_target_id = :study_id', [
+    $query->join('node__' . $this->config()->get('document.study_field'), 'study_field',
+      'study_field.entity_id = doc.nid AND study_field.' . $this->config()->get('document.study_field') . '_target_id = :study_id', [
         ':study_id' => $this->id()]);
     $query->condition('doc.type', $config->get('document.bundle'), '=' );
     $query->groupBy('doc.nid');
     $query->having('agreement_count >= :limit', [':limit' => 2]);
-    $subquery = $database->select('node__' . $this->config->get('conclusion.document_field'),'fadc');
+    $subquery = $database->select('node__' . $this->config()->get('conclusion.document_field'),'fadc');
     $subquery->join('node', 'con', 'con.nid = fadc.entity_id');
-    $subquery->addField('fadc', $this->config->get('conclusion.document_field') . '_target_id', 'document_id');
+    $subquery->addField('fadc', $this->config()->get('conclusion.document_field') . '_target_id', 'document_id');
     $subquery->condition('con.type', $config->get('conclusion.bundle'), '=');
     $query->condition('doc.nid', $subquery, 'NOT IN');
     $results = $query->execute()->fetchAll();
@@ -380,8 +382,8 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
 
   protected function getAssignments(): array {
     $analyses = $this->entityTypeManager()->getStorage('node')->getQuery()
-      ->condition('type', $this->config->get('assignment.bundle'))
-      ->condition($this->config->get('assignment.document_field') . '.entity:node.' . $this->config->get('document.study_field'), $this->id())
+      ->condition('type', $this->config()->get('assignment.bundle'))
+      ->condition($this->config()->get('assignment.document_field') . '.entity:node.' . $this->config()->get('document.study_field'), $this->id())
       ->accessCheck(TRUE)
       ->execute();
     return $this->entityTypeManager()->getStorage('node')->loadMultiple($analyses);
@@ -389,8 +391,8 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
 
   protected function getSubjectAnalyses(): array {
       $analyses = $this->entityTypeManager()->getStorage('node')->getQuery()
-        ->condition('type', $this->config->get('subject_analysis.bundle'))
-        ->condition($this->config->get('subject_analysis.document_field') . '.entity:node.' . $this->config->get('document.study_field'), $this->id())
+        ->condition('type', $this->config()->get('subject_analysis.bundle'))
+        ->condition($this->config()->get('subject_analysis.document_field') . '.entity:node.' . $this->config()->get('document.study_field'), $this->id())
         ->accessCheck(TRUE)
         ->execute();
     return $this->entityTypeManager()->getStorage('node')->loadMultiple($analyses);
@@ -400,8 +402,8 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
   public function getAgreements(): array {
     $storage = $this->entityTypeManager()->getStorage('node');
     $agreements = $storage->getQuery()
-      ->condition('type', $this->config->get('agreement.bundle'))
-      ->condition($this->config->get('agreement.document_field') . '.entity:node.' . $this->config->get('document.study_field'), $this->id())
+      ->condition('type', $this->config()->get('agreement.bundle'))
+      ->condition($this->config()->get('agreement.document_field') . '.entity:node.' . $this->config()->get('document.study_field'), $this->id())
       ->accessCheck(TRUE)
       ->execute();
     return $storage->loadMultiple($agreements);
@@ -409,15 +411,15 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
 
   public function getDependents(): array
   {
-    return $this->computeDependents($this->config->get('document.bundle'),
-      $this->config->get('document.study_field'));
+    return $this->computeDependents($this->config()->get('document.bundle'),
+      $this->config()->get('document.study_field'));
   }
 
   public function getAgreementAssignments(): array {
     $storage = $this->entityTypeManager()->getStorage('node');
     $agreement_assignments = $storage->getQuery()
       ->condition('type', $this->config()->get('agreement_assignment.bundle'))
-      ->condition($this->config()->get('agreement_assignment.document_field') . '.entity:node.' . $this->config->get('document.study_field'), $this->id())
+      ->condition($this->config()->get('agreement_assignment.document_field') . '.entity:node.' . $this->config()->get('document.study_field'), $this->id())
       ->accessCheck(FALSE)
       ->execute();
     return $storage->loadMultiple($agreement_assignments);

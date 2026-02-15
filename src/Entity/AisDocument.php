@@ -147,11 +147,11 @@ class AisDocument extends AbstractAisNode implements  AisDocumentInterface {
 
     // Create assignment.
     $assignment = AisAssignment::create([
-      'type' => $this->config->get('assignment.bundle'),
+      'type' => $this->config()->get('assignment.bundle'),
       'title' => 'Assignment of ' . $this->id() . ' to ' . $user->getAccountName()
     ]);
-    $assignment->set($this->config->get('assignment.user_field'), ['target_id' => $user->id()]);
-    $assignment->set($this->config->get('assignment.document_field'), ['target_id' => $this->id()]);
+    $assignment->set($this->config()->get('assignment.user_field'), ['target_id' => $user->id()]);
+    $assignment->set($this->config()->get('assignment.document_field'), ['target_id' => $this->id()]);
     try {
       $assignment->save();
       return $assignment->id();
@@ -165,9 +165,9 @@ class AisDocument extends AbstractAisNode implements  AisDocumentInterface {
   {
     $assignment_ids = $this->entityTypeManager()->getStorage('node')->getQuery()
       ->accessCheck(TRUE)
-      ->condition('type', $this->config->get('assignment.bundle'))
-      ->condition($this->config->get('assignment.document_field'), $this->id())
-      ->condition($this->config->get('assignment.user_field'), $user->id())
+      ->condition('type', $this->config()->get('assignment.bundle'))
+      ->condition($this->config()->get('assignment.document_field'), $this->id())
+      ->condition($this->config()->get('assignment.user_field'), $user->id())
       ->execute();
     if (!empty($assignment_ids)) {
       return True;
@@ -178,8 +178,8 @@ class AisDocument extends AbstractAisNode implements  AisDocumentInterface {
 
   public function getDependents(): array
   {
-    return $this->computeDependents($this->config->get('assignment.bundle'),
-      $this->config->get('assignment.document_field'));
+    return $this->computeDependents($this->config()->get('assignment.bundle'),
+      $this->config()->get('assignment.document_field'));
   }
 
 }
