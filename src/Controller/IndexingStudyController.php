@@ -72,7 +72,7 @@ class IndexingStudyController extends ControllerBase {
       'destination' => Url::fromRoute('indexing_study.study', ['study_node' => $study_node->id()])->toString()
     ]);
     $title = $this->t("Documents (@count in study)", [
-      '@count' => $study_node->getDocCount()
+      '@count' => count($study_node->getDocIdsAll())
     ]);
     $build['documents'] = [
       '#type' => 'details',

@@ -8,11 +8,11 @@ use Drupal\user\UserInterface;
 interface AisStudyInterface extends AbstractAisNodeInterface {
 
   /**
-   * Return the total number of active documents in the study.
+   * Return the .
    *
-   * @return int
+   * @return array
    */
-  public function getDocCount(): int;
+  public function getDocIdsAll(): array;
 
   /**
    * Return the total number of documents with agreements in the study.

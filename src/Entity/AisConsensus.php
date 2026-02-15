@@ -10,7 +10,8 @@ class AisConsensus extends AbstractAisNode implements AisConsensusInterface
 {
   public function getDependents(): array
   {
-    return $this->computeDependents($this->config->get('agreement_assignment.bundle'),
+    return $this->computeDependents(
+      $this->config->get('agreement_assignment.bundle'),
       $this->config->get('agreement_assignment.consensus_field'));
   }
 
@@ -56,6 +57,7 @@ class AisConsensus extends AbstractAisNode implements AisConsensusInterface
           unset($potential_reviewers[$key]);
         }
       }
+
       // Get reviewers on agreement assignments, and remove from potential reviewers.
       $agreement_assignments = $document->getAgreementAssignments(); # Related published agreement assignments objects..
       foreach ($agreement_assignments as $assignment) {
@@ -75,6 +77,7 @@ class AisConsensus extends AbstractAisNode implements AisConsensusInterface
         $potential_reviewers = $ideal_reviewers;
       }
 
+      // Select a reviewer and create an agreement assignment.
       $selected_reviewer = $potential_reviewers[array_rand($potential_reviewers)];
       $this->createAgreementAssignment($selected_reviewer);
 
@@ -87,25 +90,26 @@ class AisConsensus extends AbstractAisNode implements AisConsensusInterface
 
   }
   public function createAgreementAssignment(UserInterface $user): AisAgreementAssignment {
-    $document = $this->getDocument();
-
-    if (!$this->agreementAssignmentExists($user)) {
-      $agreement_assignment = AisAgreementAssignment::create([
-        'type' => $this->config->get('agreement_assignment.bundle'),
-        'title' => 'Agreement Assignment for doc ' . $document->id() . ' to ' . $user->getAccountName()
-      ]);
-      $agreement_assignment->set($this->config->get('agreement_assignment.user_field'), ['target_id' => $user->id()]);
-      $agreement_assignment->set($this->config->get('agreement_assignment.document_field'), ['target_id' => $document->id()]);
-      $agreement_assignment->set($this->config->get('agreement_assignment.consensus_field'), ['target_id' => $this->id()]);
-      try {
-        $agreement_assignment->save();
-        return $agreement_assignment;
-      } catch (EntityStorageException $e) {
-        $this->logger->error('Could not create assignment. Error: ' . $e);
-        throw $e;
-      }
+    if ($this->agreementAssignmentExists($user)) {
+      throw new Exception("Assignment agreement for user {$user->getAccountName()} already exists.");
     }
-    throw new Exception("Assignment agreement for user {$user->getAccountName()} already exists.");
+
+    $document = $this->getDocument();
+    $agreement_assignment = AisAgreementAssignment::create([
+      'type' => $this->config->get('agreement_assignment.bundle'),
+      'title' => 'Agreement Assignment for doc ' . $document->id() . ' to ' . $user->getAccountName(),
+    ]);
+    $agreement_assignment->set($this->config->get('agreement_assignment.user_field'), ['target_id' => $user->id()]);
+    $agreement_assignment->set($this->config->get('agreement_assignment.document_field'), ['target_id' => $document->id()]);
+    $agreement_assignment->set($this->config->get('agreement_assignment.consensus_field'), ['target_id' => $this->id()]);
+    try {
+      $agreement_assignment->save();
+      return $agreement_assignment;
+    } catch (EntityStorageException $e) {
+      $this->logger->error('Could not create assignment. Error: ' . $e);
+      throw $e;
+    }
+
   }
 
   public function agreementAssignmentExists(UserInterface $user): bool {

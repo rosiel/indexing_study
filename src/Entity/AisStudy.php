@@ -82,7 +82,7 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
       $user = \Drupal::currentUser();
     }
     // Get assignments for that user with that study, that aren't in the completed assignments
-    $assignment_query = \Drupal::entityQuery('node')
+    $assignment_query = $this->entityTypeManager()->getStorage('node')->getQuery()
       ->condition('type', $this->config->get('assignment.bundle'))
       ->condition($this->config->get('assignment.document_field') . '.entity:node.' . $this->config->get('document.study_field'), $this->id())
       ->condition($this->config->get('assignment.user_field'), $user->id())
@@ -98,9 +98,10 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
    * @param \Drupal\node\NodeInterface $study
    * @return array
    */
-  public function getDocIdsAll()  {
-    return \Drupal::entityTypeManager()->getStorage('node')->getQuery()
+  public function getDocIdsAll(): array  {
+    return $this->entityTypeManager()->getStorage('node')->getQuery()
       ->accessCheck(FALSE)
+      ->condition('type', $this->config()->get('document.bundle'))
       ->condition($this->config->get('document.study_field'), $this->id())
       ->execute();
   }
@@ -136,7 +137,6 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
     $docs_all = $this->getDocIdsAll();
     return array_diff($docs_all, $docs_rejected, $docs_fully_assigned);
   }
-
 
   public function getDocIdsFullyAssigned() {
     $config = $this->config();
@@ -379,7 +379,7 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
   }
 
   protected function getAssignments(): array {
-    $analyses = \Drupal::entityQuery('node')
+    $analyses = $this->entityTypeManager()->getStorage('node')->getQuery()
       ->condition('type', $this->config->get('assignment.bundle'))
       ->condition($this->config->get('assignment.document_field') . '.entity:node.' . $this->config->get('document.study_field'), $this->id())
       ->accessCheck(TRUE)
@@ -388,7 +388,7 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
   }
 
   protected function getSubjectAnalyses(): array {
-      $analyses = \Drupal::entityQuery('node')
+      $analyses = $this->entityTypeManager()->getStorage('node')->getQuery()
         ->condition('type', $this->config->get('subject_analysis.bundle'))
         ->condition($this->config->get('subject_analysis.document_field') . '.entity:node.' . $this->config->get('document.study_field'), $this->id())
         ->accessCheck(TRUE)

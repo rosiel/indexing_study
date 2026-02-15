@@ -28,14 +28,6 @@ class AbstractAisNode extends Node
     return $this->config;
   }
 
-  protected function intify_array($array): array {
-    $return_array = [];
-    foreach ($array as $value) {
-      $return_array[] = (int) $value;
-    }
-    return $return_array;
-  }
-
   protected function computeDependents($bundle, $field) {
     $dependent_ids = $this->entityTypeManager()->getStorage('node')->getQuery()
       ->accessCheck(FALSE)
@@ -44,10 +36,11 @@ class AbstractAisNode extends Node
       ->execute();
     return $this->entityTypeManager()->getStorage('node')->loadMultiple($dependent_ids);
   }
+
   public static function preDelete(EntityStorageInterface $storage, array $entities)
   {
     parent::preDelete($storage, $entities);
-    // Delete related entities.
+    // Delete dependent entities.
     foreach($entities as $entity) {
       $dependents = $entity->getDependents();
       foreach ($dependents as $dependent) {
