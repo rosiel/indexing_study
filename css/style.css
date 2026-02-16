@@ -30,3 +30,7 @@
 .ais-document .field {
   padding-bottom: 1em;
 }
+
+.ais-checkboxes-narrow .form-type--checkbox {
+  margin-block: 0;
+}
