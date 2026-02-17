@@ -10,15 +10,22 @@ use Exception;
 
 class AisStudy extends AbstractAisNode implements  AisStudyInterface {
 
-  public function getAssignmentsForAnalysis(): array {
-    return $this->getAssignments(True, True);
+  public function getAssignmentIdsForAnalysis(): array {
+    return $this->getAssignmentIds(True, True);
   }
 
   public function getDocsAwaitingAnalysis(): array {
     // Find all assignments that are not completed. Get their docs.
-    $assignments = $this->getAssignmentsForAnalysis();
-    $docs = array_map(fn($a) => $a->getDocument(), $assignments);
-    return array_unique($docs, SORT_REGULAR);
+    $assignments = $this->getAssignmentIdsForAnalysis();
+    $documents = $this->getDocIdsAll();
+    $database = \Drupal::database();
+    $adf = $this->config()->get('assignment.document_field');
+    $query = $database->select("node__{$adf}", 'ass_doc_field');
+    $query->addField('ass_doc_field', "{$adf}_target_id", 'document_id');
+    $query->condition('ass_doc_field.entity_id', $assignments, 'IN');
+    $query->condition("ass_doc_field.{$adf}_target_id", $documents, 'IN');
+    $results = $query->distinct()->execute()->fetchAll();
+    return $results;
   }
 
   public function getConsensuses(): array {
@@ -313,7 +320,7 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
     return $this->get($this->config()->get('study.reviewers_field'))->referencedEntities();
   }
 
-  protected function getAssignments($published_only = False, $incomplete_only = False): array {
+  protected function getAssignmentIds($published_only = False, $incomplete_only = False): array {
     $query = $this->entityTypeManager()->getStorage('node')->getQuery()
       ->condition('type', $this->config()->get('assignment.bundle'))
       ->condition($this->config()->get('assignment.document_field') . '.entity:node.' . $this->config()->get('document.study_field'), $this->id())
@@ -334,7 +341,7 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
       $assignments_completed = $query->execute()->fetchAll();
       $analyses = array_diff($analyses, array_column($assignments_completed, 'nid'));
     }
-    return $this->entityTypeManager()->getStorage('node')->loadMultiple($analyses);
+    return $analyses;
   }
 
   protected function getSubjectAnalyses(): array {

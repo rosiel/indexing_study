@@ -138,7 +138,7 @@ class IndexingStudyController extends ControllerBase {
 
     // Build section for analysis.
     $docs_needing_analysis = count($study_node->getDocsAwaitingAnalysis());
-    $assignments_awaiting = count($study_node->getAssignmentsForAnalysis());
+    $assignments_awaiting = count($study_node->getAssignmentIdsForAnalysis());
     $needs_analysis_by_user = count($study_node->getAssignmentIdsForAnalysisByUser());
     $analysis_url = Url::fromRoute('indexing_study.analyze', ['study_node' => $study_node->id()]);
     $manage_analyses_url = Url::fromRoute('view.is_reviews.page_1', ['field_ais_study_target_id' => $study_node->id()]);
