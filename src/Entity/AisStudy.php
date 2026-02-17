@@ -11,9 +11,7 @@ use Exception;
 class AisStudy extends AbstractAisNode implements  AisStudyInterface {
 
   public function getAssignmentsForAnalysis(): array {
-    $assignments = $this->getAssignments();
-    $active_assignments = array_filter($assignments, fn($a) => $a->isPublished());
-    return array_filter($active_assignments, fn($a) => !$a->isCompleted());
+    return $this->getAssignments(True, True);
   }
 
   public function getDocsAwaitingAnalysis(): array {
@@ -84,9 +82,7 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
     $config = $this->config();
     // Assignment.document field shorthand
     $adf = $config->get('assignment.document_field');
-    // Document study field shor
-    //
-    //thand
+    // Document study field shorthand
     $dsf = $config->get('document.study_field');
     $database = \Drupal::database();
     $query = $database->select('node','doc');
@@ -317,12 +313,27 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
     return $this->get($this->config()->get('study.reviewers_field'))->referencedEntities();
   }
 
-  protected function getAssignments(): array {
-    $analyses = $this->entityTypeManager()->getStorage('node')->getQuery()
+  protected function getAssignments($published_only = False, $incomplete_only = False): array {
+    $query = $this->entityTypeManager()->getStorage('node')->getQuery()
       ->condition('type', $this->config()->get('assignment.bundle'))
       ->condition($this->config()->get('assignment.document_field') . '.entity:node.' . $this->config()->get('document.study_field'), $this->id())
-      ->accessCheck(TRUE)
-      ->execute();
+      ->accessCheck(TRUE);
+    if ($published_only) {
+      $query->condition('status', 1);
+    }
+    $analyses =  $query->execute();
+    if ($incomplete_only) {
+      $assignment_field = $this->config()->get('subject_analysis.assignment_field');
+      $database = \Drupal::database();
+      $query = $database->select('node', 'sa');
+      $query->addField('assignment', 'nid');
+      $query->join('node__' . $assignment_field, 'assignment_field', 'sa.nid = assignment_field.entity_id');
+      $query->join('node', 'assignment', "assignment_field.{$assignment_field}_target_id = assignment.nid" );
+      $query->condition('sa.type', $this->config()->get('subject_analysis.bundle'));
+      $query->condition('assignment.type', $this->config()->get('assignment.bundle'));
+      $assignments_completed = $query->execute()->fetchAll();
+      $analyses = array_diff($analyses, array_column($assignments_completed, 'nid'));
+    }
     return $this->entityTypeManager()->getStorage('node')->loadMultiple($analyses);
   }
 
