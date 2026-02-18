@@ -20,10 +20,14 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
     $documents = $this->getDocIdsAll();
     $database = \Drupal::database();
     $adf = $this->config()->get('assignment.document_field');
-    $query = $database->select("node__{$adf}", 'ass_doc_field');
-    $query->addField('ass_doc_field', "{$adf}_target_id", 'document_id');
-    $query->condition('ass_doc_field.entity_id', $assignments, 'IN');
-    $query->condition("ass_doc_field.{$adf}_target_id", $documents, 'IN');
+    $query = $database->select("node__{$adf}", 'assignment_doc_field');
+    $query->addField('assignment_doc_field', "{$adf}_target_id", 'document_id');
+    if (count($assignments)) {
+      $query->condition('assignment_doc_field.entity_id', $assignments, 'IN');
+    }
+    if (count($documents)) {
+      $query->condition("assignment_doc_field.{$adf}_target_id", $documents, 'IN');
+    }
     $results = $query->distinct()->execute()->fetchAll();
     return $results;
   }

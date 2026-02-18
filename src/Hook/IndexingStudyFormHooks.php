@@ -158,7 +158,7 @@ class IndexingStudyFormHooks {
       // Set disabled fields.
       $form[$this->config->get('conclusion.document_field')]['#after_build'][] = [self::class, 'setDisabled'];
       $form[$this->config->get('conclusion.agreement_field')]['#after_build'][] = [self::class, 'setDisabled'];
-      
+
       // Don't display the meta or revision information.
       $form['advanced']['#access'] = False;
 
@@ -185,6 +185,7 @@ class IndexingStudyFormHooks {
       if ($assignment and $assignment instanceof NodeInterface) {
         $assignment->setUnpublished();
         $assignment->save();
+        \Drupal::messenger()->addStatus("Assignment has been rejected.");
       }
     }
   }

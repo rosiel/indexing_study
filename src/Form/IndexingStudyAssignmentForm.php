@@ -68,7 +68,7 @@ class IndexingStudyAssignmentForm extends FormBase {
     ];
     $form['study_info_edit'] = [
       '#type' => 'link',
-      '#title' => $this->t("Configure Study"),
+      '#title' => $this->t("Configure Study Details and Participants."),
       '#url' => $study_node->toUrl('edit-form'),
     ];
     $form['documents_to_assign'] = [
@@ -85,6 +85,7 @@ class IndexingStudyAssignmentForm extends FormBase {
       '#type' => 'checkboxes',
       '#title' => $this->t('Select reviewers to assign.'),
       '#options' => $user_options,
+      '#description' => $this->t("Please select at least two users. Assignments will be chosen at random from the selected users who are eligible (i.e. not already assigned to the document)."),
     ];
     $form['submit'] = [
       '#type' => 'submit',
@@ -103,7 +104,7 @@ class IndexingStudyAssignmentForm extends FormBase {
     }
     // Error if fewer users than reviewers-per-reference (hardcoded at 2).
     if (count(array_filter($form_state->getValue('reviewers'))) < 2) {
-      $form_state->setErrorByName('reviewers', $this->t('There must be at least 2 reviewers assigned.'));
+      $form_state->setErrorByName('reviewers', $this->t('There must be at least 2 reviewers to assign documents to.'));
     }
     parent::validateForm($form, $form_state);
   }
