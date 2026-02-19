@@ -7,3 +7,6 @@ services:
     arguments: [ '@entity_type.manager', '@request_stack', '@config.factory']
     tags:
       - { name: breadcrumb_builder, priority: 100 }
+  indexing_study.utils:
+    class: Drupal\indexing_study\IndexingStudyUtils
+    arguments: ['@database', '@config.factory']

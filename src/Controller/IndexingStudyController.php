@@ -2,35 +2,73 @@
 
 namespace Drupal\indexing_study\Controller;
 
-use Drupal;
 use Drupal\Component\Serialization\Yaml;
-use Drupal\Core\Controller\ControllerBase;
-use Drupal\Core\Url;
-use Drupal\indexing_study\Entity\AisStudyInterface;
-use Drupal\indexing_study\Entity\AisAgreementAssignmentInterface;
-use Drupal\Core\Messenger\MessengerTrait;
 use Drupal\Core\Access\AccessResult;
+use Drupal\Core\Access\AccessResultInterface;
+use Drupal\Core\Controller\ControllerBase;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Messenger\MessengerTrait;
 use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Url;
+use Drupal\indexing_study\Entity\AisAgreementAssignmentInterface;
+use Drupal\indexing_study\Entity\AisStudyInterface;
+use Drupal\indexing_study\IndexingStudyUtils;
 use Exception;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+
 
 /**
- * Testing a controller.
+ * Study Overview page controller.
  */
 class IndexingStudyController extends ControllerBase {
   use MessengerTrait;
 
   /**
-   * Access callback
+   * Indexing Study Utils.
+   *
+   * @var \Drupal\indexing_study\IndexingStudyUtils
    */
-  public function access(AccountInterface $account, AisStudyInterface $study_node): Drupal\Core\Access\AccessResultForbidden|Drupal\Core\Access\AccessResultAllowed
+  protected IndexingStudyUtils $utils;
+
+  /**
+   * The Entity Type Manager.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   */
+  protected $entityTypeManager;
+
+  /**
+   * IndexingStudyController constructor.
+   *
+   * @param IndexingStudyUtils $utils
+   * @param EntityTypeManagerInterface $entity_type_manager
+   */
+  public function __construct(IndexingStudyUtils $utils, EntityTypeManagerInterface $entity_type_manager) {
+    $this->utils = $utils;
+    $this->entityTypeManager = $entity_type_manager;
+  }
+
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('indexing_study.utils'),
+      $container->get('entity_type.manager'),
+    );
+  }
+
+  /**
+   * Access callback.
+   */
+  public function access(AccountInterface $account, AisStudyInterface $study_node): AccessResultInterface
   {
+    // Allow users who are registered in this study.
     $users_in_study = $study_node->getReviewers();
     foreach ($users_in_study as $user_in_study) {
       if ($account->id() == $user_in_study->id()) {
         return AccessResult::allowed();
       }
     }
-    if ($account->hasPermission('administer content')) {
+    // Allow user with administrator-level permissions.
+    if ($account->hasPermission('administer site configuration')) {
       return AccessResult::allowed();
     }
     return AccessResult::forbidden();
@@ -52,7 +90,7 @@ class IndexingStudyController extends ControllerBase {
       '#type' => 'details',
       '#title' => $this->titleTag($title),
     ];
-    $build['study']['study_node'] = $this->entityTypeManager()
+    $build['study']['study_node'] = $this->entityTypeManager
       ->getViewBuilder('node')
       ->view($study_node, 'default');
     $edit_study_url = Url::fromRoute('entity.node.edit_form', [
@@ -72,7 +110,7 @@ class IndexingStudyController extends ControllerBase {
       'destination' => Url::fromRoute('indexing_study.study', ['study_node' => $study_node->id()])->toString()
     ]);
     $title = $this->t("Documents (@count in study)", [
-      '@count' => count($study_node->getDocIdsAll())
+      '@count' => count($this->utils->docIdsAll($study_node)),
     ]);
     $build['documents'] = [
       '#type' => 'details',
@@ -96,10 +134,10 @@ class IndexingStudyController extends ControllerBase {
     ];
 
     // Build the assignment section.
-    $needs_assignment = count($study_node->getDocIdsAwaitingAssignment());
+    $needs_assignment = count($this->utils->docIdsAwaitingAssignment($study_node));
+    $count_rejected = count($this->utils->docIdsRejected($study_node));
     $assignment_url = Url::fromRoute('indexing_study.assign', ['study_node' => $study_node->id()]);
     $manage_assignments_url = Url::fromRoute('view.is_assignments.page_1', ['field_ais_study_target_id' => $study_node->id()]);
-    $count_rejected = count($study_node->getDocIdsRejected());
 
     if ($needs_assignment > 0) {
       $title = $this->t("Assignments (@count awaiting assignment, @count_rejected rejected)", ['@count' => $needs_assignment, '@count_rejected' => $count_rejected]);
@@ -137,12 +175,12 @@ class IndexingStudyController extends ControllerBase {
     ];
 
     // Build section for analysis.
-    $docs_needing_analysis = count($study_node->getDocsAwaitingAnalysis());
-    $assignments_awaiting = count($study_node->getAssignmentIdsForAnalysis());
-    $needs_analysis_by_user = count($study_node->getAssignmentIdsForAnalysisByUser());
+    $docs_needing_analysis = count($this->utils->docsIdsAwaitingAnalysis($study_node));
+    $assignments_awaiting = count($this->utils->assignmentIdsForAnalysis($study_node));
+    $needs_analysis_by_user = count($this->utils->assignmentIdsForAnalysisByUser($study_node, $this->currentUser()));
     $analysis_url = Url::fromRoute('indexing_study.analyze', ['study_node' => $study_node->id()]);
     $manage_analyses_url = Url::fromRoute('view.is_reviews.page_1', ['field_ais_study_target_id' => $study_node->id()]);
-    $title = $this->t("Analysis (@count_docs documents awaiting @count_awaiting subject analyses; @count_user are waiting for you)", [
+    $title = $this->t("Analysis (@count_docs documents awaiting @count_awaiting subject analyses; @count_user waiting for you)", [
       '@count_user' => $needs_analysis_by_user,
       '@count_docs' => $docs_needing_analysis,
       '@count_awaiting' => $assignments_awaiting,
@@ -177,24 +215,12 @@ class IndexingStudyController extends ControllerBase {
     ];
     $build['analysis']['progress'] = [
       '#type' => 'container',
-      '#markup' => $this->t('Study progress')
     ];
-    $build['analysis']['progress']['display'] = [
-      '#type' => 'table',
-      '#headers' => ['count','label'],
-      '#rows' => [
-        [count($study_node->getDocIdsByAnalysisCount('0')), $this->t('Documents with 0 analyses')],
-        [count($study_node->getDocIdsByAnalysisCount('1')), $this->t('Documents with 1 analysis')],
-        [count($study_node->getDocIdsByAnalysisCount('2')), $this->t('Documents with 2 analyses')],
-        [count($study_node->getDocIdsByAnalysisCount('>2')), $this->t('Documents with over 2 analyses')],
-        [count($study_node->getDocIdsRejected()), $this->t('Documents rejected')]
-
-      ],
-    ];
+    $build['analysis']['progress']['display'] = $this->assignmentStatusTable($study_node);
 
 
     // Build consensus section.
-    $needs_consensus = count($study_node->getDocIdsAwaitingConsensus());
+    $needs_consensus = count($this->utils->docIdsAwaitingConsensus($study_node));
     $consensus_url = Url::fromRoute('indexing_study.consensus', ['study_node' => $study_node->id()]);
     $manage_consensus_url = Url::fromRoute('view.is_consensus.page_1', ['field_ais_study_target_id' => $study_node->id()]);
     $title = $this->t("Consensus (@count awaiting consensus)", [
@@ -230,12 +256,12 @@ class IndexingStudyController extends ControllerBase {
     ];
 
     // Build agreement section.
-    $agreement_assignments_awaiting = count($study_node->getAgreementAssignmentsAwaiting());
-    $docs_awaiting = count($study_node->getDocsAwaitingAgreement());
-    $needs_user = count($study_node->getAgreementAssignmentsForUser());
+    $agreement_assignments_awaiting = count($this->utils->agreementAssignmentIdsForAgreement($study_node));
+    $docs_awaiting = count($this->utils->docIdsAwaitingAgreement($study_node));
+    $needs_user = count($this->utils->agreementAssignmentIdsForAgreementByUser($study_node, $this->currentUser()));
     $agreement_url = Url::fromRoute('indexing_study.agreement', ['study_node' => $study_node->id()]);
     $manage_agreement_url = Url::fromRoute('view.is_agreements.page_1', ['field_ais_study_target_id' => $study_node->id()]);
-    $title = $this->t("Agreement (@count_docs documents awaiting @count_assignment agreements; @count are waiting for you)", [
+    $title = $this->t("Agreement (@count_docs documents awaiting @count_assignment agreements; @count waiting for you)", [
       '@count' => $needs_user,
       '@count_assignment' => $agreement_assignments_awaiting,
       '@count_docs' => $docs_awaiting
@@ -268,11 +294,11 @@ class IndexingStudyController extends ControllerBase {
       '#url' => $manage_agreement_url,
       '#access' => $manage_agreement_url->access(),
     ];
-    $build['agreement']['status'] = $this->agreementStatusTable($study_node);
+    $build['agreement']['status'] = $this->agreementAssignmentStatusTable($study_node);
 
 
     // Build conclusion section.
-    $needs_conclusion = count($study_node->getDocIdsAwaitingConclusion());
+    $needs_conclusion = count($this->utils->docIdsAwaitingConclusion($study_node));
     $conclusion_url = Url::fromRoute('indexing_study.conclusion', ['study_node' => $study_node->id()]);
     $manage_conclusion_url = Url::fromRoute('view.is_conclusions.page_1', ['field_ais_study_target_id' => $study_node->id()]);
     $title = $this->t("Conclusion (@count awaiting conclusion)", [
@@ -309,7 +335,7 @@ class IndexingStudyController extends ControllerBase {
 
 
     // Build results section.
-    $result_count = count($study_node->getDocIdsCompleted());
+    $result_count = count($this->utils->docIdsCompleted($study_node));
     $results_url = Url::fromRoute('view.multiagreement_results.page_1', ['node' => $study_node->id()]);
     $title = $this->t("Results (@count completed)", [
       '@count' => $result_count
@@ -356,8 +382,9 @@ class IndexingStudyController extends ControllerBase {
       '#prefix' => '<div>',
       '#suffix' => '</div>',
     ];
-    // Build Consensus Results section
-    $result_count = count($study_node->getConsensuses());
+
+    // Build Consensus Results View/Download section
+    $result_count = count($this->utils->consensusIds($study_node));
     $results_url = Url::fromRoute('view.subject_analysis_consensus.page_1', ['field_ais_study_target_id' => $study_node->id()]);
     if ($result_count > 0) {
       if ($results_url->access()) {
@@ -415,23 +442,42 @@ class IndexingStudyController extends ControllerBase {
       ],
     ];
   }
-  protected function agreementStatusTable($study_node) {
-    // Get the list of agreement assignments.
-    $names_array = [];
-    $agreement_assignments = $study_node->getAgreementAssignments();
-    // Count the names we're waiting for.
-    foreach($agreement_assignments as $ag_assignment) {
-      if (!$ag_assignment->isCompleted()) {
-        $user = $ag_assignment->getUser()->getAccountName();
-        if (isset($names_array[$user])) {
-          $names_array[$user] += 1;
-        } else {
-          $names_array[$user] = 1;
-        }
-      }
+  protected function assignmentStatusTable($study_node): array {
+    // Get the map of reviewers to the number of awaiting assignments.
+    $users_array = [];
+    foreach ($study_node->getReviewers() as $user) {
+      $users_array[$user->getAccountName()] = count($this->utils->assignmentIdsForAnalysisByUser($study_node, $user));
     }
+    $rows = $this->rowsOfNamesAndCounts($users_array);
+    return [
+      '#type' => 'table',
+      '#header' => ['name' => $this->t('Name'), 'count' => $this->t('Incomplete Assignments')],
+      '#rows' => $rows,
+      '#attributes' => ['class' => ['assignment-table']],
+      '#empty' => $this->t("There are no incomplete assignments."),
+    ];
+  }
+
+  protected function agreementAssignmentStatusTable($study_node): array {
+    // Get map of reviewers to the number of awaiting assignments.
+    $users_array = [];
+    foreach ($study_node->getReviewers() as $user) {
+      $users_array[$user->getAccountName()] = count($this->utils->agreementAssignmentIdsForAgreementByUser($study_node, $user));
+    }
+    $rows = $this->rowsOfNamesAndCounts($users_array);
+    return [
+      '#type' => 'table',
+      '#header' => ['name' => $this->t('Name'), 'count' => $this->t('Incomplete Agreement Assignments')],
+      '#rows' => $rows,
+      '#attributes' => ['class' => ['assignment-table']],
+      '#empty' => $this->t("There are no incomplete agreement assignments."),
+    ];
+  }
+
+  protected function rowsOfNamesAndCounts(array $users_array): array
+  {
     $values = [];
-    foreach ($names_array as $name => $count) {
+    foreach ($users_array as $name => $count) {
       $values[] = [
         'name' => [
           'data' => [
@@ -445,20 +491,14 @@ class IndexingStudyController extends ControllerBase {
         ]
       ];
     }
-    return [
-      '#type' => 'table',
-      '#header' => ['name' => $this->t('Name'), 'count' => $this->t('Incomplete assignments')],
-      '#rows' => $values,
-      '#attributes' => ['class' => ['agreement-assignment-table']],
-      '#empty' => $this->t("There are no incomplete agreement assignments."),
-    ];
+    return $values;
   }
   /**
    * Returns the response page for the next assignment in a study.
    */
   public function analyze(AisStudyInterface $study_node) {
     $config = $this->config('indexing_study.settings');
-    $awaiting_analysis = $study_node->getAssignmentIdsForAnalysisByUser();
+    $awaiting_analysis = $this->utils->assignmentIdsForAnalysisByUser($study_node, $this->currentUser());
     if(count($awaiting_analysis) < 1) {
       return ['#markup' => $this->t('There are no outstanding documents needing your analysis in this study. 🥳'),
         '#cache' => ['max-age' => 0]];
@@ -486,7 +526,7 @@ class IndexingStudyController extends ControllerBase {
    */
   public function consensus(AisStudyInterface $study_node) {
     $config = $this->config('indexing_study.settings');
-    $needs_consensus = $study_node->getDocIdsAwaitingConsensus();
+    $needs_consensus = $this->utils->docIdsAwaitingConsensus($study_node);
     if(count($needs_consensus) < 1) {
       return [
         '#markup' => $this->t('There are no outstanding documents needing consensus in this study. 🥳'),
@@ -515,14 +555,15 @@ class IndexingStudyController extends ControllerBase {
 
   public function agreement(AisStudyInterface $study_node) {
     $config = $this->config('indexing_study.settings');
-    $needs_agreement = $study_node->getAgreementAssignmentsForUser();
+    $needs_agreement = $this->utils->agreementAssignmentIdsForAgreementByUser($study_node, $this->currentUser());
     if (count($needs_agreement) < 1) {
       return [
         '#markup' => $this->t('There are no outstanding documents needing agreement in this study. 🥳'),
         '#cache' => ['max-age'=>0]
       ];
     } else {
-      $agreement_assignment = $needs_agreement[array_rand($needs_agreement)];
+      $agreement_assignment_id = $needs_agreement[array_rand($needs_agreement)];
+      $agreement_assignment = $this->entityTypeManager()->getStorage('node')->load($agreement_assignment_id);
       if (!$agreement_assignment instanceof AisAgreementAssignmentInterface) {
         throw new Exception("Entity provided was not an agreement assignment.");
       }
@@ -543,12 +584,13 @@ class IndexingStudyController extends ControllerBase {
       );
     }
   }
+
   /**
    * Returns the response page for the next assignment in a study.
    */
   public function conclusion(AisStudyInterface $study_node) {
     $config = $this->config('indexing_study.settings');
-    $needs_conclusion = $study_node->getDocIdsAwaitingConclusion();
+    $needs_conclusion = $this->utils->docIdsAwaitingConclusion($study_node);
     if(count($needs_conclusion) < 1) {
       return [
         '#markup' => $this->t('There are no outstanding documents needing conclusion in this study. 🥳'),

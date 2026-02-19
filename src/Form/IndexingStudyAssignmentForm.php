@@ -8,6 +8,7 @@ use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Messenger\MessengerTrait;
 use Drupal\indexing_study\Entity\AisStudyInterface;
+use Drupal\indexing_study\IndexingStudyUtils;
 use Drupal\node\NodeInterface;
 use Exception;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -17,6 +18,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  */
 class IndexingStudyAssignmentForm extends FormBase {
   use MessengerTrait;
+
   /**
    * The entity type manager.
    *
@@ -32,32 +34,39 @@ class IndexingStudyAssignmentForm extends FormBase {
   protected ImmutableConfig $config;
 
   /**
+   * The indexing study utils.
+   *
+   * @var IndexingStudyUtils
+   */
+  protected IndexingStudyUtils $utils;
+
+  /**
    * Constructor.
    *
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
    *   The entity type manager.
    */
-  public function __construct(EntityTypeManagerInterface $entityTypeManager) {
+  public function __construct(EntityTypeManagerInterface $entityTypeManager, IndexingStudyUtils $utils) {
     $this->entityTypeManager = $entityTypeManager;
     $this->config = $this->config('indexing_study.settings');
+    $this->utils = $utils;
   }
 
-  /**
-   * {@inheritdoc}
-   */
   public static function create(ContainerInterface $container) {
     return new static(
-      $container->get('entity_type.manager')
+      $container->get('entity_type.manager'),
+      $container->get('indexing_study.utils'),
     );
   }
 
-  public function getFormId() {
+  public function getFormId(): string
+  {
     return 'indexing_study_assignment_form';
   }
 
   public function buildForm(array $form, FormStateInterface $form_state, AisStudyInterface $study_node = NULL) {
     $study_title = $study_node->getTitle();
-    $documents_to_assign = count($study_node->getDocIdsAwaitingAssignment());
+    $documents_to_assign = count($this->utils->docIdsAwaitingAssignment($study_node));
 
     $form['study'] = [
       '#type' => 'value',

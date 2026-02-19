@@ -104,7 +104,7 @@ class AisConsensus extends AbstractAisNode implements AisConsensusInterface
     $agreement_assignment->set($this->config()->get('agreement_assignment.consensus_field'), ['target_id' => $this->id()]);
     try {
       $agreement_assignment->save();
-      $this->messenger()->addStatus("Added agreement assignment to {$user->getAccountName()}");
+      $this->messenger()->addStatus("{$agreement_assignment->getBundleEntity()->label()} to {$user->getAccountName()} has been created.");
       $this->logger->info("Success! Agreement Assignment created: node @id.", ['@id' => $agreement_assignment->id()]);
       return $agreement_assignment;
     } catch (EntityStorageException $e) {

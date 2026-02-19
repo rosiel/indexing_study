@@ -6,6 +6,7 @@ use Drupal\Core\Config\ImmutableConfig;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\Core\Messenger\MessengerTrait;
+use Drupal\indexing_study\IndexingStudyUtils;
 use Drupal\node\Entity\Node;
 use Drupal\Core\Logger\LoggerChannelInterface;
 use Psr\Log\LoggerInterface;
@@ -27,22 +28,29 @@ class AbstractAisNode extends Node
    */
   protected LoggerChannelInterface $logger;
 
+  /**
+   * The Indexing Study utils.
+   *
+   * @var \Drupal\indexing_study\IndexingStudyUtils
+   */
+  protected IndexingStudyUtils $utils;
+
   public function __construct(array $values, $entity_type, $bundle = FALSE, $translations = [])
   {
     parent::__construct($values, $entity_type, $bundle, $translations);
     $this->config = \Drupal::config('indexing_study.settings');
     $this->logger = \Drupal::service('logger.factory')->get('indexing_study');
+    $this->utils = \Drupal::service('indexing_study.utils');
   }
 
-  protected function config(): ImmutableConfig
-  {
+  protected function config(): ImmutableConfig {
     if (!isset($this->config)) {
       $this->config = \Drupal::config('indexing_study.settings');
     }
     return $this->config;
   }
 
-  protected function computeDependents($bundle, $field) {
+  protected function computeDependents($bundle, $field): array {
     $dependent_ids = $this->entityTypeManager()->getStorage('node')->getQuery()
       ->accessCheck(FALSE)
       ->condition('type', $bundle)
