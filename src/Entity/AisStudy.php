@@ -45,6 +45,8 @@ class AisStudy extends AbstractAisNode implements  AisStudyInterface {
         }
       }
     }
+    $count = count($documentIds);
+    $this->messenger()->addStatus("Success! {$count} documents have been assigned.");
     return True;
   }
 
