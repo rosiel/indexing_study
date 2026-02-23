@@ -223,10 +223,10 @@ class IndexingStudyOverview
       '#url' => $manage_analyses_url,
       '#access' => $manage_analyses_url->access()
     ];
-    $analysis_section['progress'] = [
-      '#type' => 'container',
-    ];
-    $analysis_section['progress']['display'] = $this->assignmentStatusTable($study_node);
+//    $analysis_section['progress'] = [
+//      '#type' => 'container',
+//    ];
+//    $analysis_section['progress']['display'] = $this->assignmentStatusTable($study_node);
 
     return $analysis_section;
   }
