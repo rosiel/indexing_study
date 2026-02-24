@@ -1,0 +1,35 @@
+digraph workflow {
+  node [shape=box,style=filled];
+      "Study" [fillcolor="fuchsia",label="0 - Study"]
+      "Document" [fillcolor="chartreuse",label = "1 - Document"]
+      "Assignment 1" [fillcolor="chartreuse",label="2 - Assignment"]
+      "Assignment 2" [fillcolor="chartreuse",label="2 - Assignment"]
+      "Subject Analysis 1" [fillcolor="chartreuse:cyan",label="3 - Subject Analysis"]
+      "Subject Analysis 2" [fillcolor="chartreuse:cyan",label="3 - Subject Analysis"]
+      "Consensus" [fillcolor="chartreuse",label="4 - Consensus"]
+      "Agreement Assignment 1" [fillcolor="chartreuse",label="5 - Agreement Assignment"]
+      "Agreement Assignment 2" [fillcolor="chartreuse",label="5 - Agreement Assignment"]
+      "Agreement 1" [fillcolor="chartreuse:cyan",label="6 - Agreement"]
+      "Agreement 2" [fillcolor="chartreuse:cyan",label="6 - Agreement"]
+      "Conclusion" [fillcolor="chartreuse",label="7 - Conclusion"]
+  Study -> Document [headlabel = "n" labeldistance=2]
+  Document -> {"Assignment 1", "Assignment 2"}
+  "Assignment 1" -> "Subject Analysis 1"
+  "Assignment 2" -> "Subject Analysis 2"
+  {"Subject Analysis 1", "Subject Analysis 2"} -> Consensus
+  Consensus -> {"Agreement Assignment 1", "Agreement Assignment 2"}
+  "Agreement Assignment 1" -> "Agreement 1"
+  "Agreement Assignment 2" -> "Agreement 2"
+  {"Agreement 1", "Agreement 2"} -> "Conclusion"
+   "Assignment 1":sw -> "Assignment 1":nw [color="red",headlabel="rejection\nmax 2\n\n",labelfontcolor="red"]
+
+  graph [labelloc="b" labeljust="r" label=<
+  	<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="1">
+  	<TR><TD colspan="2">LEGEND</TD></TR>
+  	<TR><TD bgcolor="fuchsia" width="40px"></TD><TD>Administrator</TD></TR>
+  	<TR><TD bgcolor="chartreuse" width="40px"></TD><TD>Study Manager</TD></TR>
+  	<TR><TD bgcolor="aqua" width="40px"></TD><TD>Study Participant</TD></TR>
+  	</TABLE>>];
+
+}
+
