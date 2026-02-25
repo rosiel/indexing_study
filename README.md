@@ -1,9 +1,10 @@
 # AI Indexing Study
 
-A Drupal suite (Recipe + Module) to assess automatic ("robot") indexing of
-medical journal articles against human subject specialists acting as indexers.
+A Drupal suite (Recipe + Module) to assess automated ("robot") indexing of
+medical journal articles. With a team of subject specialists, researcher expectations of concepts represented in
+indexing are solicited, validated, and then compared to actual indexing.
 
-> [!CAUTION]
+> [!IMPORTANT]
 > Do not install this module alone. A Drupal Recipe exists to deploy this module
 with necessary Drupal configurations. See Installation, below.
 
