@@ -46,8 +46,8 @@ Document, a document is eligible for Consensus.
 
 ### 4 - Consensus
 Create **Consensus**. During Consensus, both Subject Analyses
-(lists of subject terms) are presented and the User merges the lists (using
-their judgement) into a final list of human-generated terms applied to this
+(lists of concepts) are presented and the User merges the lists (using
+their judgement) into a final list of human-generated concepts applied to this
 Document. This step is performed by the Study Manager(s), ideally
 collaboratively.
 
@@ -59,8 +59,8 @@ these are different Users than created the Subject Analyses for that Document.
 
 
 ### 6 - Agreement
-Determine **Agreement**. Do the MeSH terms assigned by the robot agree with the
-human-generated consensus terms? The Study Participant performing this step is
+Determine **Agreement**. Do the MeSH terms assigned by the robot represent the
+human-generated consensus concepts? The Study Participant performing this step is
 asked a number of questions such as whether terms were missing from the MeSH,
 whether terms are erroneously present, there are errors of precision, or if the
 "robot did better".
