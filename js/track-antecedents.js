@@ -128,12 +128,7 @@
         $(this).on('keyup', function () {
           var $topic = $(this);
           var $paragraph = $topic.closest('.paragraphs-subform');
-
-          if ($topic.val().trim() !== '') {
-            populateAntecedents($paragraph);
-          } else {
-            clearAntecedents($paragraph);
-          }
+          populateAntecedents($paragraph);
         })
       });
 
