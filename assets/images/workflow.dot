@@ -1,17 +1,24 @@
 digraph workflow {
-  node [shape=box,style=filled];
-      "Study" [fillcolor="fuchsia",label="0 - Study"]
-      "Document" [fillcolor="chartreuse",label = "1 - Document"]
-      "Assignment 1" [fillcolor="chartreuse",label="2 - Assignment"]
-      "Assignment 2" [fillcolor="chartreuse",label="2 - Assignment"]
-      "Subject Analysis 1" [fillcolor="chartreuse:cyan",label="3 - Subject Analysis"]
-      "Subject Analysis 2" [fillcolor="chartreuse:cyan",label="3 - Subject Analysis"]
-      "Consensus" [fillcolor="chartreuse",label="4 - Consensus"]
-      "Agreement Assignment 1" [fillcolor="chartreuse",label="5 - Agreement Assignment"]
-      "Agreement Assignment 2" [fillcolor="chartreuse",label="5 - Agreement Assignment"]
-      "Agreement 1" [fillcolor="chartreuse:cyan",label="6 - Agreement"]
-      "Agreement 2" [fillcolor="chartreuse:cyan",label="6 - Agreement"]
-      "Conclusion" [fillcolor="chartreuse",label="7 - Conclusion"]
+node [shape=box,style=filled];
+subgraph Study {
+  shape=box
+  style=filled
+  color=fuchsia
+  label="My study"
+
+  "Study" [fillcolor="fuchsia",label="0 - Study"]
+  "Document" [fillcolor="chartreuse",label = "1 - Document"]
+  "Assignment 1" [fillcolor="chartreuse",label="2 - Assignment"]
+  "Assignment 2" [fillcolor="chartreuse",label="2 - Assignment"]
+  "Subject Analysis 1" [fillcolor="chartreuse:cyan",label="3 - Subject Analysis"]
+  "Subject Analysis 2" [fillcolor="chartreuse:cyan",label="3 - Subject Analysis"]
+  "Consensus" [fillcolor="chartreuse",label="4 - Consensus"]
+  "Agreement Assignment 1" [fillcolor="chartreuse",label="5 - Agreement Assignment"]
+  "Agreement Assignment 2" [fillcolor="chartreuse",label="5 - Agreement Assignment"]
+  "Agreement 1" [fillcolor="chartreuse:cyan",label="6 - Agreement"]
+  "Agreement 2" [fillcolor="chartreuse:cyan",label="6 - Agreement"]
+  "Conclusion" [fillcolor="chartreuse",label="7 - Conclusion"]
+
   Study -> Document [headlabel = "n" labeldistance=2]
   Document -> {"Assignment 1", "Assignment 2"}
   "Assignment 1" -> "Subject Analysis 1"
@@ -22,6 +29,7 @@ digraph workflow {
   "Agreement Assignment 2" -> "Agreement 2"
   {"Agreement 1", "Agreement 2"} -> "Conclusion"
    "Assignment 1":sw -> "Assignment 1":nw [color="red",headlabel="rejection\nmax 2\n\n",labelfontcolor="red"]
+}
 
   graph [labelloc="b" labeljust="r" label=<
   	<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="1">

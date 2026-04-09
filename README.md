@@ -66,14 +66,14 @@ whether terms are erroneously present, there are errors of precision, or if the
 "robot did better".
 
 ### 7 - Conclusion
-After two Agreements, a Study Manager can create a Conclusion summarizing
+After two Agreements, a Study Manager can create a **Conclusion** summarizing
 the two Agreements by noting whether there was agreement between the Agreement
 creators, whether the indexing was acceptable, and answering the same questions
 as were posed in the Agreement stage. This step is performed by the Study
 Manager(s), ideally collaboratively.
 
 ### 8 - Results
-Finally, the results of _completed_ documents can be viewed in a Drupal table,
+Finally, the **results** of _completed_ documents can be viewed in a Drupal table,
 or downloaded as a CSV either with pipes ('|') separating multiple values in a column (
 for programmatic analysis) or with newlines separating multiple values (better
 for human reading). Any user who is part of a study may download Results.
