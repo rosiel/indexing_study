@@ -13,3 +13,19 @@
 .assignment-table {
   border-spacing: 1rem;
 }
+
+/* Hide low-priority columns on small screens */
+@media screen and (max-width: 640px) {
+  .views-table th.priority-low,
+  .views-table td.priority-low {
+    display: none;
+  }
+}
+
+/* Hide medium-priority columns on medium screens */
+@media screen and (max-width: 960px) {
+  .views-table th.priority-medium,
+  .views-table td.priority-medium {
+    display: none;
+  }
+}
