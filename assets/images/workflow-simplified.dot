@@ -1,0 +1,33 @@
+digraph workflow {
+	node [shape=box,style=filled,width=2.4,colorscheme=bupu3];
+	subgraph Study {
+	  shape=box
+	  style=filled
+	  color=fuchsia
+	  label="My study"
+	
+	  "Document" [color=2,label = "1 - Document"]
+	  "Assignment 1" [color=2,label="2 - Assignment"]
+	  "Assignment 2" [color=2,label="2 - Assignment"]
+	  "Subject Analysis 1" [color=1,label="3 - Subject Analysis"]
+	  "Subject Analysis 2" [color=1,label="3 - Subject Analysis"]
+	  "Consensus" [color=2,label="4 - Consensus"]
+	  "Agreement Assignment 1" [color=2,label="5 - Agreement Assignment"]
+	  "Agreement Assignment 2" [color=2,label="5 - Agreement Assignment"]
+	  "Agreement 1" [color=1,label="6 - Agreement"]
+	  "Agreement 2" [color=1,label="6 - Agreement"]
+	  "Conclusion" [color=2,label="7 - Conclusion"]
+	
+	  Document -> {"Assignment 1", "Assignment 2"}
+	  "Assignment 1" -> "Subject Analysis 1"
+	  "Assignment 2" -> "Subject Analysis 2"
+	  {"Subject Analysis 1", "Subject Analysis 2"} -> Consensus
+	  Consensus -> {"Agreement Assignment 1", "Agreement Assignment 2"}
+	  "Agreement Assignment 1" -> "Agreement 1"
+	  "Agreement Assignment 2" -> "Agreement 2"
+	  {"Agreement 1", "Agreement 2"} -> "Conclusion"
+	   "Assignment 1":sw -> "Assignment 1":nw [color="red",headlabel="rejection\nmax 2\n\n",labelfontcolor="red"]
+	}
+	 
+}
+
