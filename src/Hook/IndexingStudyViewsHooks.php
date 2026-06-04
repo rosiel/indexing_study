@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Drupal\indexing_study\Hook;
 
 use Drupal\Core\Hook\Attribute\Hook;
+use Drupal\views\ViewExecutable;
 
 class IndexingStudyViewsHooks {
   /**
