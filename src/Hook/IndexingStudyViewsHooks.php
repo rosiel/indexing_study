@@ -91,5 +91,15 @@ class IndexingStudyViewsHooks {
       ],
     ];
   }
+
+  /**
+   * Implements hook_views_pre_render().
+   */
+  #[Hook('views_pre_render')]
+  function preRender(ViewExecutable $view) {
+    if ($view->storage->id() == 'indexing_study_index') {
+      $view->element['#attached']['library'][] = 'indexing_study/display';
+    }
+  }
 }
 
